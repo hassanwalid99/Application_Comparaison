@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vue Scene</title>
+    <style>
+        /* Styles pour la liste des dossiers */
+        .folder-list {
+            overflow-y: scroll;
+            max-height: 400px;
+        }
+
+        /* Style pour le bouton X */
+        .delete-button {
+            cursor: pointer;
+            color: red;
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+    {% load static %}
+</head>
+<body>
+    <h1 style="left: 370px; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word">Gestion des scenes</h1>
+    <div style="float: left; width: 70%;">
+        <!-- Contenu de la vue scene -->
+    </div>
+    <div style="float: right; width: 25%;">
+        <h2 style="margin-top: 150px;">Liste des Dossiers</h2>
+        <div class="folder-list" id="folder-list">
+            {% for folder in folders %}
+                <div class="folder-item" data-folder="{{ folder }}">
+                    <span class="delete-button" data-folder="{{ folder }}">X</span>
+                    {{ folder }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div style="float: left; width: 70%;">
+        <h2 style="margin-top: 200px;">Nouvelle scene</h2>
+        <div>
+            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                {% csrf_token %}
+                <input type="file" id="zip_file" name="zip_file" accept=".zip" style="display: none;" />
+                <button type="button" onclick="document.getElementById('zip_file').click();">Choisir un fichier .zip</button>
+                <input type="text" id="selected_folder" name="selected_folder" readonly>
+                <br>
+                <button type="button" id="validatefolder">Envoyer</button>
+            </form>
+        </div>
+    </div>
+    <script src="{% static 'js/main.js' %}?v={% now "U" %}"></script>
+</body>
+</html>
