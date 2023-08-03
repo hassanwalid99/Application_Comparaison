@@ -69,53 +69,15 @@ document.addEventListener("DOMContentLoaded", function() {
         
         .then(response => response.json())
         .then(data => {
-            // ...
+            if (!data.success) {
+                alert('Erreur du fichier .zip ' + data.error);
+            } else {
+                window.location.reload();
+            }
+            document.getElementById('selected_folder').value = "";
+            console.log('Réponse du serveur :', data);
         })
         .catch(error => console.error('Erreur', error));
-    }
-
-
-    function addFolder(folderName, folderPath) {
-    const formData = new FormData();
-    formData.append("folderName", folderName);
-    formData.append("folderPath", folderPath); // Ajouter le chemin complet du dossier à la requête
-
-    fetch('/add_folder/', {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: formData,
-    })
-    .then(response => response.json())
-    .then(data => {
-        // ...
-    })
-    .catch(error => console.error('Erreur lors de l\'ajout du dossier :', error));
-    }
-
-    
-
-    function refreshFolderList(folders) {
-        const folderListElement = document.getElementById("folder-list");
-        folderListElement.innerHTML = "";
-
-        folders.forEach((folder) => {
-            const folderItemElement = document.createElement("div");
-            folderItemElement.classList.add("folder-item");
-            folderItemElement.setAttribute("data-folder", folder);
-
-            const deleteButtonElement = document.createElement("span");
-            deleteButtonElement.classList.add("delete-button");
-            deleteButtonElement.setAttribute("data-folder", folder);
-            deleteButtonElement.textContent = "X";
-
-            folderItemElement.appendChild(deleteButtonElement);
-            folderItemElement.appendChild(document.createTextNode(folder));
-
-            folderListElement.appendChild(folderItemElement);
-        });
     }
 
     function getCookie(name) {
