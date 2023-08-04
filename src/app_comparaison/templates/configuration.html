@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vue configuration</title>
+    {% load static %}
+</head>
+<body>
+    <h1 style="left: 370px; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word">Gestion des configurations</h1>
+    <div style="float: left; width: 70%;">
+        <!-- Contenu de la vue configuration -->
+        <div class="container">
+            <button onclick="toggleView('view1')">Vue 1</button>
+            <button onclick="toggleView('view2')">Vue 2</button>
+            
+            <div class="view" id="view1" style="display: none;">
+              <h2>Vue 1</h2>
+              <p>Ceci est la vue 1.</p>
+            </div>
+            
+            <div class="view" id="view2" style="display: none;">
+              <h2>Vue 2</h2>
+              <p>Ceci est la vue 2.</p>
+            </div>
+          </div>
+    <script src="{% static 'js/main.js' %}?v={% now "U" %}"></script>
+</body>
+</html>

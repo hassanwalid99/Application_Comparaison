@@ -51,12 +51,15 @@ document.addEventListener("DOMContentLoaded", function() {
     const envoiebutton = document.getElementById("validatefolder");
 
     envoiebutton.addEventListener("click", function() {
-        uploadZipFile()
+    const inputNameScene  = document.getElementById('name_scene');    
+    const scenename = inputNameScene.value;   
+        uploadZipFile(scenename)
     });
 
     // Envoie le fichier .zip sélectionné au backend via une requête AJAX
-    function uploadZipFile() {
+    function uploadZipFile(scenename) {
         var formData = new FormData(document.getElementById('uploadForm'));
+        formData.append("Name", scenename);
         console.log("data:", formData);
         fetch('/uploadZipFile/', {
             method: 'POST',
@@ -70,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(response => response.json())
         .then(data => {
             if (!data.success) {
-                alert('Erreur du fichier .zip ' + data.error);
+                alert('Erreur : ' + data.error);
             } else {
                 window.location.reload();
             }
