@@ -44,11 +44,11 @@ def upload_zip_file(request):
     directory_path = "C:/Users/AT83190/Desktop/application/scene"
     if request.method == 'POST' and request.FILES.get('zip_file'):
         new_name = request.POST.get('Name')
+        image_file = request.FILES['image_file']
+        original_filename, file_extension = os.path.splitext(image_file.name)
 
         zip_file = request.FILES['zip_file']
         ancien_nom = zip_file.name
-        base_name, file_extension = os.path.splitext(zip_file.name)
-        zip_file.name = new_name + file_extension
                       
         try:
             # Ouvrir le fichier .zip
@@ -56,17 +56,20 @@ def upload_zip_file(request):
                 # Vérifier si un fichier avec l'extension .pbrt existe dans le zip
                 for file_name in zip_ref.namelist():
                     if file_name.lower().endswith('.pbrt'):
-                        zip_file_name = zip_file.name
-                        zip_file_name_without_extension = zip_file_name[:-4]
-                        print(zip_file_name_without_extension)
-                        if os.path.exists(os.path.join(directory_path, zip_file_name_without_extension)):
+                        if os.path.exists(os.path.join(directory_path, new_name)):
                             return JsonResponse({'success': False, 'error': 'Un dossier avec le nom existe déjà dans le répertoire cible'})
                         else:
                             dossier_tempo = os.path.join(directory_path, "tempo")
                             os.makedirs(dossier_tempo)                           
                             zip_ref.extractall(dossier_tempo)
-                            os.rename(os.path.join(dossier_tempo , ancien_nom[:-4]) , os.path.join(directory_path , zip_file_name_without_extension) )
-                            os.rmdir(dossier_tempo)                   
+                            os.rename(os.path.join(dossier_tempo , ancien_nom[:-4]) , os.path.join(directory_path , new_name) )
+                            os.rmdir(dossier_tempo)  
+                            
+                                                                  
+                            with open(os.path.join(directory_path , new_name, image_file.name), 'wb') as destination_file:
+                                shutil.copyfileobj(image_file, destination_file)
+                            os.rename(os.path.join(directory_path , new_name, image_file.name) , os.path.join(directory_path , new_name, new_name+file_extension))
+      
                             message = "Le type de fichier .pbrt est présent dans le dossier .zip."
                             return JsonResponse({'success': True, 'message': message})
 

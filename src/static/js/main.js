@@ -48,6 +48,16 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById('selected_folder').value = filename;
     });
 
+    document.getElementById('image_file').addEventListener('change', function() {
+        var fullPath = this.value;
+        var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+        var filename = fullPath.substring(startIndex);
+        if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
+            filename = filename.substring(1);
+        }
+        document.getElementById('selected_image').value = filename;
+    });
+    
     const envoiebutton = document.getElementById("validatefolder");
 
     envoiebutton.addEventListener("click", function() {
@@ -59,6 +69,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Envoie le fichier .zip sélectionné au backend via une requête AJAX
     function uploadZipFile(scenename) {
         var formData = new FormData(document.getElementById('uploadForm'));
+
         formData.append("Name", scenename);
         console.log("data:", formData);
         fetch('/uploadZipFile/', {
@@ -77,7 +88,6 @@ document.addEventListener("DOMContentLoaded", function() {
             } else {
                 window.location.reload();
             }
-            document.getElementById('selected_folder').value = "";
             console.log('Réponse du serveur :', data);
         })
         .catch(error => console.error('Erreur', error));
