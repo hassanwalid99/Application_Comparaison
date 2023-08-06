@@ -1,27 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Vue configuration</title>
+    <title>Ma Vue avec Onglets</title>
+    <style>
+        /* Style pour la barre d'onglets */
+        .tab {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #f2f2f2;
+            width: 150px;
+            cursor: pointer;
+            margin-top: 200px;
+            text-align: center; 
+            line-height: center;   
+        }
+
+        .tab.selected {
+            background-color: #ccc;
+            width: 150px;
+        }
+
+        /* Style pour les contenus de chaque onglet */
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .tab-content.active {
+            display: block;
+            width: 60%;
+        }
+
+        /* Styles pour le tableau */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        table th {
+            background-color: #f2f2f2;
+        }
+
+        /* Style pour le bouton "+" */
+        .add-row {
+            cursor: pointer;
+            color: green;
+            margin-top: 10px;
+            margin-bottom: -15px;
+            font-size: 1.3em;;
+        }
+
+        /* Style pour les champs de texte dans le tableau */
+        table input[type="text"] {
+            width: 100%;
+            box-sizing: border-box; /* Inclure le padding et la bordure dans la largeur */
+        }
+    </style>
     {% load static %}
 </head>
 <body>
-    <h1 style="left: 370px; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word">Gestion des configurations</h1>
-    <div style="float: left; width: 70%;">
-        <!-- Contenu de la vue configuration -->
-        <div class="container">
-            <button onclick="toggleView('view1')">Vue 1</button>
-            <button onclick="toggleView('view2')">Vue 2</button>
+    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des configuration</h1>
+    <div>
+        <!-- Onglets -->
+        <div class="tab selected" onclick="showTabContent(1)">Nouvelle configuration</div>
+        <div class="tab" onclick="showTabContent(2)">Nouvelle Version</div>
+    </div>
+
+    <div>
+        <!-- Contenu de l'onglet 1 -->
+        <div class="tab-content active" id="tab-content-1">
+            <!-- Insérez ici le contenu de la première sous-vue -->
+            <h2>Nom de configuration</h2>
+            <label for="name_scene">Nom de la scène :</label>
+            <input type="text" style="margin-left:10px" id="name_scene" name="name_scene">
             
-            <div class="view" id="view1" style="display: none;">
-              <h2>Vue 1</h2>
-              <p>Ceci est la vue 1.</p>
-            </div>
-            
-            <div class="view" id="view2" style="display: none;">
-              <h2>Vue 2</h2>
-              <p>Ceci est la vue 2.</p>
-            </div>
-          </div>
-    <script src="{% static 'js/main.js' %}?v={% now "U" %}"></script>
+        
+            <h2 style="margin-top: 20px;">Tableau</h2>
+            <table id="config-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Paramètre</th>
+                        <th>Valeur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" placeholder="Type"></td>
+                        <td><input type="text" placeholder="Paramètre"></td>
+                        <td><input type="text" placeholder="Valeur"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="add-row" onclick="addRow()">+</div>
+        </div>
+
+        <!-- Contenu de l'onglet 2 -->
+        <div class="tab-content" id="tab-content-2">
+            <!-- Laissez cette sous-vue vide ou ajoutez d'autres éléments selon vos besoins -->
+        </div>
+    </div>
+    <script src="{% static 'js/config.js' %}?v={% now "U" %}"></script>
 </body>
 </html>
