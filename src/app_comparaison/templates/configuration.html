@@ -76,13 +76,13 @@
     <div>
         <!-- Contenu de l'onglet 1 -->
         <div class="tab-content active" id="tab-content-1">
+            {% csrf_token %}
             <!-- Insérez ici le contenu de la première sous-vue -->
-            <h2>Nom de configuration</h2>
-            <label for="name_scene">Nom de la scène :</label>
-            <input type="text" style="margin-left:10px" id="name_scene" name="name_scene">
+            <label for="name_scene">Nom de configuration :</label>
+            <input type="text" style="margin-left:10px" id="name_config" name="name_config">
             
         
-            <h2 style="margin-top: 20px;">Tableau</h2>
+            <h2 style="margin-top: 20px;">Parametres</h2>
             <table id="config-table">
                 <thead>
                     <tr>
@@ -101,11 +101,13 @@
             </table>
 
             <div class="add-row" onclick="addRow()">+</div>
+            <br>
+            <button type="button" id="validatefolder" style="width: 180px; height: 35px;" onclick="sendDataToBackend()">Envoyer</button>
         </div>
 
         <!-- Contenu de l'onglet 2 -->
         <div class="tab-content" id="tab-content-2">
-            <!-- Laissez cette sous-vue vide ou ajoutez d'autres éléments selon vos besoins -->
+            <button type="button" id="validatefolder" style= "width: 180px; height: 35px;">Envoyer</button>
         </div>
     </div>
     <script src="{% static 'js/config.js' %}?v={% now "U" %}"></script>

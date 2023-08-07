@@ -28,3 +28,38 @@ function addRow() {
     cell2.innerHTML = '<input type="text" placeholder="Paramètre">';
     cell3.innerHTML = '<input type="text" placeholder="Valeur">';
 }
+
+function sendDataToBackend() {
+    const nameConfig = document.getElementById('name_config').value;
+    const rows = document.querySelectorAll('#config-table tbody tr');
+    const parameters = [];
+
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const param = {
+            'Type': inputs[0].value,
+            'Paramètre': inputs[1].value,
+            'Valeur': inputs[2].value
+        };
+        parameters.push(param);
+    });
+
+    // Création de l'objet FormData pour envoyer les données
+    const formData = new FormData();
+    formData.append('name_config', nameConfig);
+    formData.append('parameters', JSON.stringify(parameters));
+
+    // Envoi de la requête POST via AJAX
+    fetch('/save_configuration/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+    })
+    .catch(error => {
+        console.error('Erreur lors de l\'envoi des données:', error);
+    });
+}
+  

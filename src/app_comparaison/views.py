@@ -8,6 +8,10 @@ from django.views.decorators.http import require_POST
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
 from .models import Folder
+from tinydb import TinyDB, Query
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 def accueil(request):
     return render(request, 'accueil.html')
@@ -88,3 +92,17 @@ def upload_zip_file(request):
     # Réponse JSON en cas d'erreur ou si le formulaire n'est pas correctement rempli
     return JsonResponse({'success': False,'error': 'Une erreur s\'est produite lors de la vérification du fichier .zip.'}, status=400)
 
+@csrf_exempt
+def save_configuration(request):
+    if request.method == 'POST':
+        data = request.POST
+        name_config = data.get('name_config')
+        print(data)
+        # Enregistrement des paramètres dans la base de données TinyDB
+        db = TinyDB('configurations.json')
+        table = db.table('configuration')
+        table.insert({'name_config': name_config, 'parameters': data.dict()})
+
+        return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
+    else:
+        return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
