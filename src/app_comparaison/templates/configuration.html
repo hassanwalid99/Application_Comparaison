@@ -66,7 +66,7 @@
     {% load static %}
 </head>
 <body>
-    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des configuration</h1>
+    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 65px; font-family: Inter; font-weight: 300; word-wrap: break-word; transform: translateX(-50%);">Gestion des configuration</h1>
     <div>
         <!-- Onglets -->
         <div class="tab selected" onclick="showTabContent(1)">Nouvelle configuration</div>
@@ -87,29 +87,58 @@
                 <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Paramètre</th>
+                        <th>Parametre</th>
                         <th>Valeur</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><input type="text" placeholder="Type"></td>
-                        <td><input type="text" placeholder="Paramètre"></td>
+                        <td><input type="text" placeholder="Parametre"></td>
                         <td><input type="text" placeholder="Valeur"></td>
                     </tr>
                 </tbody>
             </table>
 
-            <div class="add-row" onclick="addRow()">+</div>
+            <div class="add-row" onclick="addRow('config-table')">+</div>
             <br>
             <button type="button" id="validatefolder" style="width: 180px; height: 35px;" onclick="sendDataToBackend()">Envoyer</button>
         </div>
-
-        <!-- Contenu de l'onglet 2 -->
+        <!-- Nouvelle version -->
         <div class="tab-content" id="tab-content-2">
-            <button type="button" id="validatefolder" style= "width: 180px; height: 35px;">Envoyer</button>
+            <h2>Nouvelle Version</h2>
+            <label for="select_config">Sélectionnez la configuration :</label>
+            <div>
+                <select id="name_select">
+                    <option value="" disabled selected>Configuration</option>
+                    <!-- Les options seront ajoutées dynamiquement via JavaScript -->
+                </select>
+            </div>
+
+            <!-- Table pour entrer les paramètres -->
+            <h2>Paramètres</h2>
+            <table id="config-table2">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Parametre</th>
+                        <th>Valeur</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" placeholder="Type"></td>
+                        <td><input type="text" placeholder="Parametre"></td>
+                        <td><input type="text" placeholder="Valeur"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="add-row" onclick="addRow('config-table2')">+</div>
+            <br>
+            <button type="button" id="validatefolder2" style="width: 180px; height: 35px;" onclick="sendDataToBackend2()">Envoyer</button>
+            </div>
         </div>
-    </div>
     <script src="{% static 'js/config.js' %}?v={% now "U" %}"></script>
 </body>
 </html>

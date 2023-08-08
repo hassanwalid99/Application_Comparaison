@@ -97,12 +97,41 @@ def save_configuration(request):
     if request.method == 'POST':
         data = request.POST
         name_config = data.get('name_config')
-        print(data)
-        # Enregistrement des paramètres dans la base de données TinyDB
+        
+        # Vérifier si le nom de configuration existe déjà dans la base de données
         db = TinyDB('configurations.json')
-        table = db.table('configuration')
-        table.insert({'name_config': name_config, 'parameters': data.dict()})
+        if db.table(name_config):
+            return JsonResponse({'error': 'Erreur : la configuration existe.'}, status=400)
+        
+        table = db.table(name_config)   
+        
+        # Enregistrement des paramètres dans la base de données TinyDB
+        table.insert({ 'config': data.dict()})
 
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
     else:
         return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+    
+@csrf_exempt
+def save_version(request):
+    if request.method == 'POST':
+        data = request.POST
+        name_select = data.get('name_select')
+        
+        db = TinyDB('configurations.json')       
+        table = db.table(name_select)   
+        
+        # Enregistrement des paramètres dans la base de données TinyDB
+        table.insert({ 'config': data.dict()})
+
+        return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
+    else:
+        return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+    
+    
+def get_table_names(request):
+    db = TinyDB('configurations.json')
+    table_names_set = db.tables()
+    table_names_list = list(table_names_set)  # Convertir l'ensemble en liste
+    print(table_names_set)
+    return JsonResponse({'table_names': table_names_list})
