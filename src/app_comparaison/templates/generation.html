@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configuration Generation</title>
+    {% load static %}
+    <style>     
+        .folder-list {
+            float: left;
+            width: 15%;
+            margin-top: 250px;
+            margin-left: 100px;
+            overflow-y: scroll;
+            max-height: 400px;
+        }
+    
+        /* Positionnement de la deuxième liste déroulante */
+        .version-list {
+            float: left;
+            width: 13%;
+            margin-top: 250px;
+            margin-left: 10px;
+            overflow-y: scroll;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des Rendus</h1>
+    <form id="generation-form">
+        <h2 style="position: absolute; top:200px; left: 20px;">Liste des configurations</h2>
+        <div class="version-list" id="version-list">
+            {% for version_name in table_versions %}
+                <label class="version-item" data-version="{{ version_name }}">
+                    <input type="checkbox" class="version-checkbox" name="selected_versions" value="{{ version_name }}">
+                    {{ version_name }}
+                </label>
+                <br>
+            {% endfor %}
+        </div>
+        <h2 style="position: absolute; top: 200px; left: 360px;">Liste des scenes</h2>
+        <div class="list folder-list" id="folder-list">
+            {% for folder in folders %}
+                <label class="folder-item" data-folder="{{ folder }}">
+                    <input type="checkbox" class="folder-checkbox" name="selected_folders" value="{{ folder }}">
+                    {{ folder }}
+                </label>
+                <br>
+            {% endfor %}
+        </div>
+        <button type="submit" style="position: absolute; top: 700px; left: 250px; width: 200px; height: 50px;">Submit</button>
+    </form>
+
+    <script src="{% static 'js/gener.js' %}"></script>
+</body>
+</html>

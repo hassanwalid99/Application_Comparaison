@@ -25,6 +25,26 @@ def scene(request):
 def configuration(request):
     return render(request, 'configuration.html')
 
+
+def generation(request):  
+    db = TinyDB('configurations.json')
+    table_names = db.tables()
+
+    table_versions = []
+
+    for table_name in table_names:
+        table = db.table(table_name)
+        versions = table.all()
+        for version in versions:
+            version_name = f"{table_name}.{version.doc_id}"
+            table_versions.append(version_name)
+    
+    directory_path = "C:/Users/AT83190/Desktop/application/scene"
+    folders = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
+    
+
+    return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders})
+
 @require_POST
 def delete_folder_view(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

@@ -90,7 +90,7 @@ function sendDataToBackend2() {
         parameters.push(param);
     }); 
     
-    if (!nameConfig || parameters.some(param => !param.Type || !param.Parametre || !param.Valeur)) {
+    if (!selectedConfig || parameters.some(param => !param.Type || !param.Parametre || !param.Valeur)) {
         alert('Veuillez remplir tous les champs.');
         return; // Ne pas envoyer les données si les champs sont vides
     }
