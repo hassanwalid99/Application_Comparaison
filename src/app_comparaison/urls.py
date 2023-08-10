@@ -12,6 +12,8 @@ urlpatterns = [
     path('save_configuration/', views.save_configuration, name='save_configuration'),
     path('get_table_names/', views.get_table_names, name='get_table_names'),
     path('save_version/', views.save_version, name='save_version'),
+    path('get_parameters/', views.get_parameters, name='get_parameters'),
+
     
 ] 
 

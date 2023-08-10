@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import os
+from datetime import datetime
 import zipfile
+import json
 from pathlib import Path
 import shutil
 from django.views.decorators.http import require_POST
@@ -24,7 +26,6 @@ def scene(request):
 
 def configuration(request):
     return render(request, 'configuration.html')
-
 
 def generation(request):  
     db = TinyDB('configurations.json')
@@ -123,10 +124,14 @@ def save_configuration(request):
         if db.table(name_config):
             return JsonResponse({'error': 'Erreur : la configuration existe.'}, status=400)
         
-        table = db.table(name_config)   
-        
+        table = db.table(name_config) 
+
         # Enregistrement des paramètres dans la base de données TinyDB
-        table.insert({ 'config': data.dict()})
+        doc_id = table.insert({ 'config': data.dict()})
+        version_data = table.get(doc_id = int (doc_id))
+        
+        chemin_dossier = os.path.join(".", "rendus", name_config + "." + str(doc_id))
+        os.makedirs(chemin_dossier, exist_ok=True)
 
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
     else:
@@ -142,16 +147,65 @@ def save_version(request):
         table = db.table(name_select)   
         
         # Enregistrement des paramètres dans la base de données TinyDB
-        table.insert({ 'config': data.dict()})
-
+        doc_id = table.insert({ 'config': data.dict()})
+        version_data = table.get(doc_id = int (doc_id))
+        
+        chemin_dossier = os.path.join(".", "rendus", name_select + "." + str(doc_id))
+        os.makedirs(chemin_dossier, exist_ok=True)
+        
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
     else:
         return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
-    
-    
+        
 def get_table_names(request):
     db = TinyDB('configurations.json')
     table_names_set = db.tables()
     table_names_list = list(table_names_set)  # Convertir l'ensemble en liste
-    print(table_names_set)
+    
     return JsonResponse({'table_names': table_names_list})
+
+@require_POST
+def get_parameters(request):
+    selected_versions = request.POST.getlist('selected_versions[]')
+    selected_folders = request.POST.getlist('selected_folders[]')
+    maintenant = datetime.now()
+    date = maintenant.strftime("%Y-%m-%d_%H-%M-%S")
+    db = TinyDB('configurations.json')
+    parameters = {}
+    
+    for version_name in selected_versions:
+        table_name, version_number = version_name.split('.')
+        table = db.table(table_name)
+        version_data = table.get(doc_id=int(version_number))
+        if version_data:
+            params_list = json.loads(version_data['config']['parameters'])
+            parameters[version_name] = params_list
+            
+            tempo = os.path.join(".", "rendus", version_name, "tempo")
+            os.makedirs(tempo, exist_ok=True)
+            os.makedirs(os.path.join(".", "rendus", version_name, date ) , exist_ok=True)
+            
+            
+            for folder_name in selected_folders:
+                folder_path = os.path.join('C:/Users/AT83190/Desktop/application/scene', folder_name)
+                nouveau = shutil.copytree(folder_path, os.path.join(tempo, folder_name))
+                scene_file_path = os.path.join(tempo, folder_name, 'scene.pbrt')
+                output = os.path.join(".", "rendus", version_name, date, folder_name +'.png' )
+                
+                with open(scene_file_path, 'r') as f:
+                    scene_content = f.read()
+                    
+                integrator_line = f'Integrator "{table_name}"\n'
+                scene_content = scene_content.replace('%%PARAMS%%', integrator_line, 1)
+
+                for param in params_list:
+                    param_text = f"{param['Type']} : {param['Parametre']} : {param['Valeur']}"
+                    if param['Type'] == "string":
+                        scene_content = scene_content.replace('\n', f"\n\t\"{param['Type']} {param['Parametre']}\" [ \"{param['Valeur']}\" ]\n", 1)  # Add param on new line
+                    else:
+                        scene_content = scene_content.replace('\n', f"\n\t\"{param['Type']} {param['Parametre']}\" [ {param['Valeur']} ]\n", 1)  # Add param on new line
+                scene_content = scene_content.replace('%%OUTPUT%%', f'"{output}"' )
+                with open(scene_file_path, 'w') as f:
+                    f.write(scene_content)
+    
+    return JsonResponse({'success': True})
