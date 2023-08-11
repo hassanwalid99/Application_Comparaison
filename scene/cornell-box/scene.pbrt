@@ -1,7 +1,7 @@
 %%PARAMS%%
 Transform [ 1 -0 -0 -0 -0 1 -0 -0 -0 -0 -1 -0 -0 -1 6.8 1  ]
 Sampler "sobol"
-    "integer pixelsamples" [ 64 ]
+    "integer pixelsamples" [ 1 ]
 PixelFilter "triangle"
     "float xradius" [ 1 ]
     "float yradius" [ 1 ]

@@ -6,6 +6,7 @@ import zipfile
 import json
 from pathlib import Path
 import shutil
+import subprocess
 from django.views.decorators.http import require_POST
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
@@ -45,6 +46,14 @@ def generation(request):
     
 
     return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders})
+
+def comparaison(request):
+    if request.method == 'GET':
+        source_path = os.path.join(".", "rendus")
+        if os.path.exists(source_path):
+            folders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
+            return render(request, 'comparaison.html', {'folders': folders})
+    return render(request, 'comparaison.html', {'folders': []})
 
 @require_POST
 def delete_folder_view(request):
@@ -168,6 +177,7 @@ def get_table_names(request):
 def get_parameters(request):
     selected_versions = request.POST.getlist('selected_versions[]')
     selected_folders = request.POST.getlist('selected_folders[]')
+    selected_exe = request.FILES['selected_exe']
     maintenant = datetime.now()
     date = maintenant.strftime("%Y-%m-%d_%H-%M-%S")
     db = TinyDB('configurations.json')
@@ -190,8 +200,7 @@ def get_parameters(request):
                 folder_path = os.path.join('C:/Users/AT83190/Desktop/application/scene', folder_name)
                 nouveau = shutil.copytree(folder_path, os.path.join(tempo, folder_name))
                 scene_file_path = os.path.join(tempo, folder_name, 'scene.pbrt')
-                output = os.path.join(".", "rendus", version_name, date, folder_name +'.png' )
-                
+                output = os.path.join(".", "rendus", version_name, date, folder_name +'.png' )                
                 with open(scene_file_path, 'r') as f:
                     scene_content = f.read()
                     
@@ -204,8 +213,29 @@ def get_parameters(request):
                         scene_content = scene_content.replace('\n', f"\n\t\"{param['Type']} {param['Parametre']}\" [ \"{param['Valeur']}\" ]\n", 1)  # Add param on new line
                     else:
                         scene_content = scene_content.replace('\n', f"\n\t\"{param['Type']} {param['Parametre']}\" [ {param['Valeur']} ]\n", 1)  # Add param on new line
-                scene_content = scene_content.replace('%%OUTPUT%%', f'"{output}"' )
+                output_for_scene = output.replace('\\', '/')
+                scene_content = scene_content.replace('%%OUTPUT%%', f'"{output_for_scene}"' )
                 with open(scene_file_path, 'w') as f:
                     f.write(scene_content)
-    
+                
+                exe_file_path = os.path.join(tempo, selected_exe.name)
+                with open(exe_file_path, 'wb') as exe_file:
+                    for chunk in selected_exe.chunks():
+                        exe_file.write(chunk)
+                
+                commande = [exe_file_path, scene_file_path]
+                subprocess.run(commande, shell=True)               
+            shutil.rmtree(tempo)
+                
     return JsonResponse({'success': True})
+
+def get_subfolders(request):
+    source_folder = request.GET.get('source')
+    subfolders = []
+
+    if source_folder:
+        source_path = os.path.join(".", "rendus", source_folder)
+        if os.path.exists(source_path):
+            subfolders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
+
+    return JsonResponse(subfolders, safe=False)
