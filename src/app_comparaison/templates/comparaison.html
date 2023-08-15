@@ -5,22 +5,25 @@
     {% load static %}
 </head>
 <body>
-    <label for="select_config">Sélectionnez la configuration :</label>
-    <div>
-        <select id="source_select">
-            <option value="" disabled selected>Configuration source</option>
-            {% for folder in folders %}
-            <option value="{{ folder }}">{{ folder }}</option>
-            {% endfor %}
-        </select>
+    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Comparaison</h1>
+    <div id="selections-container" style="margin-top:350px; left: 20px;">
+        <div class="selection-group">
+            <label for="select_config">Version :</label>
+            <select class="source_select" style="width: 200px">
+                <option value="" disabled selected>Choisir</option>
+                {% for folder in folders %}
+                <option value="{{ folder }}">{{ folder }}</option>
+                {% endfor %}
+            </select>
+            <label for="select_config" style="margin-left: 15px">Date :</label>
+            <select class="destination_select" style="margin-left: 15px; width: 200px">
+                <option value="" disabled selected>Choisir</option>
+            </select>
+            <br>
+        </div>
     </div>
 
-    <div>
-        <select id="destination_select">
-            <option value="" disabled selected>Configuration destination</option>
-            <!-- Options seront ajoutées dynamiquement via JavaScript -->
-        </select>
-    </div>
+    <button id="add_selection">+</button>
 
     <script src="{% static 'js/compar.js' %}"></script>
 </body>

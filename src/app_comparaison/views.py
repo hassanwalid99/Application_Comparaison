@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Folder
 from tinydb import TinyDB, Query
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 
 
 
@@ -47,13 +48,15 @@ def generation(request):
 
     return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders})
 
+
 def comparaison(request):
     if request.method == 'GET':
         source_path = os.path.join(".", "rendus")
         if os.path.exists(source_path):
             folders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
             return render(request, 'comparaison.html', {'folders': folders})
-    return render(request, 'comparaison.html', {'folders': []})
+    return render(request, 'comparaison.html', {'folders': []}) 
+
 
 @require_POST
 def delete_folder_view(request):
@@ -89,7 +92,7 @@ def upload_zip_file(request):
             with zipfile.ZipFile(zip_file, 'r') as zip_ref:
                 # Vérifier si un fichier avec l'extension .pbrt existe dans le zip
                 for file_name in zip_ref.namelist():
-                    if file_name.lower().endswith('.pbrt'):
+                    if file_name.lower().endswith('scene.pbrt'):
                         if os.path.exists(os.path.join(directory_path, new_name)):
                             return JsonResponse({'success': False, 'error': 'Un dossier avec le nom existe déjà dans le répertoire cible'})
                         else:
@@ -239,3 +242,14 @@ def get_subfolders(request):
             subfolders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
 
     return JsonResponse(subfolders, safe=False)
+
+def display_images(request, source_folder, destination_folder):
+    # ... Votre code existant ...
+    image_urls = [os.path.join("/", "rendus", source_folder, destination_folder, image) for image in image_files]
+
+    # Générer le contenu HTML avec les images
+    image_html = ''
+    for image_url in image_urls:
+        image_html += f'<img src="{image_url}" alt="Image">'
+
+    return HttpResponse(image_html)
