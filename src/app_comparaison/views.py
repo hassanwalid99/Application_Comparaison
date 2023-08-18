@@ -244,13 +244,9 @@ def get_subfolders(request):
 
     return JsonResponse(subfolders, safe=False)
 
-
 def view_all_images(request):
     selected_folders = request.GET.getlist('selected_folder')
     selected_subfolders = request.GET.getlist('selected_subfolder')
-
-    print("Selected Folders:", selected_folders)
-    print("Selected Subfolders:", selected_subfolders)
 
     if len(selected_folders) == len(selected_subfolders) and len(selected_folders) > 1:
         image_data = {}
@@ -268,17 +264,28 @@ def view_all_images(request):
 
                 if image_name not in image_data:
                     image_data[image_name] = {}
-                if selected_folder not in image_data[image_name]:
-                    image_data[image_name][selected_folder] = []
-                image_data[image_name][selected_folder].append(image_path)
+
+                # Create the key using selected_folder and subfolder_name
+                subfolder_name = selected_folder + "_" + selected_subfolder_list[-1]
+
+                if subfolder_name not in image_data[image_name]:
+                    image_data[image_name][subfolder_name] = []
+
+                image_data[image_name][subfolder_name].append(image_path)
+
+        # Remove images not present in all other selected subfolders
+        filtered_image_data = {}
+        for image_name, subfolder_data in image_data.items():
+            all_subfolders_exist = all(selected_folder + "_" + selected_subfolders[i].split(';')[-1] in subfolder_data for i, selected_folder in enumerate(selected_folders))
+            if all_subfolders_exist:
+                filtered_image_data[image_name] = subfolder_data
 
         context = {
-            'image_data': image_data,
+            'image_data': filtered_image_data,
         }
         return render(request, 'image_gallery.html', context)
 
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
-
 
 
 
