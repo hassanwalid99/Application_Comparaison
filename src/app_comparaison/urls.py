@@ -1,5 +1,8 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 
 urlpatterns = [
@@ -15,5 +18,8 @@ urlpatterns = [
     path('save_version/', views.save_version, name='save_version'),
     path('get_parameters/', views.get_parameters, name='get_parameters'),
     path('get_subfolders/', views.get_subfolders, name='get_subfolders'),
+    path('view_all_images/', views.view_all_images, name='view_all_images'),
 ] 
 
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

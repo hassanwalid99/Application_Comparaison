@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     const addButton = document.getElementById('add_selection');
+    const viewAllImagesButton = document.getElementById('view-all-images');
     const selectionsContainer = document.getElementById('selections-container');
 
     const initialSelection = document.querySelector('.selection-group');
@@ -31,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Mettre à jour les éléments dans la nouvelle sélection
         const newSourceSelect = selectionGroup.querySelector('.source_select');
         const newDestinationSelect = selectionGroup.querySelector('.destination_select');
-        
+
         // Réinitialiser la deuxième liste déroulante à chaque création
         newDestinationSelect.innerHTML = '<option value="" disabled selected>Choisir</option>';
 
@@ -46,9 +47,33 @@ document.addEventListener('DOMContentLoaded', function () {
         createSelection(newSelectionGroup);
     });
 
+    viewAllImagesButton.addEventListener('click', function () {
+        const selectedPairs = [];
+        const selectionGroups = document.querySelectorAll('.selection-group');
+
+        selectionGroups.forEach(function (group) {
+            const sourceSelect = group.querySelector('.source_select');
+            const destinationSelect = group.querySelector('.destination_select');
+
+            const selectedFolder = sourceSelect.value;
+            const selectedSubfolder = destinationSelect.value;
+
+            if (selectedFolder && selectedSubfolder) {
+                selectedPairs.push({
+                    folder: selectedFolder,
+                    subfolder: selectedSubfolder
+                });
+            }
+        });
+
+        if (selectedPairs.length > 1) {
+            const queryStringParts = selectedPairs.map(pair => `selected_folder=${pair.folder}&selected_subfolder=${pair.subfolder}`);
+            const queryString = queryStringParts.join('&');
+            const url = `/view_all_images/?${queryString}`;
+            window.open(url, '_blank');
+        }
+    });
 
     const initialSelectionGroup = document.querySelector('.selection-group');
     createSelection(initialSelectionGroup);
-    
-    
 });

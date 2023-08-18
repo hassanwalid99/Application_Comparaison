@@ -14,6 +14,7 @@ from .models import Folder
 from tinydb import TinyDB, Query
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.conf import settings
 
 
 
@@ -51,7 +52,7 @@ def generation(request):
 
 def comparaison(request):
     if request.method == 'GET':
-        source_path = os.path.join(".", "rendus")
+        source_path = os.path.join(".", "media" ,"rendus")
         if os.path.exists(source_path):
             folders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
             return render(request, 'comparaison.html', {'folders': folders})
@@ -142,7 +143,7 @@ def save_configuration(request):
         doc_id = table.insert({ 'config': data.dict()})
         version_data = table.get(doc_id = int (doc_id))
         
-        chemin_dossier = os.path.join(".", "rendus", name_config + "." + str(doc_id))
+        chemin_dossier = os.path.join(".", "media" ,"rendus", name_config + "." + str(doc_id))
         os.makedirs(chemin_dossier, exist_ok=True)
 
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
@@ -162,7 +163,7 @@ def save_version(request):
         doc_id = table.insert({ 'config': data.dict()})
         version_data = table.get(doc_id = int (doc_id))
         
-        chemin_dossier = os.path.join(".", "rendus", name_select + "." + str(doc_id))
+        chemin_dossier = os.path.join(".", "media" ,"rendus", name_select + "." + str(doc_id))
         os.makedirs(chemin_dossier, exist_ok=True)
         
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
@@ -194,16 +195,16 @@ def get_parameters(request):
             params_list = json.loads(version_data['config']['parameters'])
             parameters[version_name] = params_list
             
-            tempo = os.path.join(".", "rendus", version_name, "tempo")
+            tempo = os.path.join(".", "media" ,"rendus", version_name, "tempo")
             os.makedirs(tempo, exist_ok=True)
-            os.makedirs(os.path.join(".", "rendus", version_name, date ) , exist_ok=True)
+            os.makedirs(os.path.join(".", "media" ,"rendus", version_name, date ) , exist_ok=True)
             
             
             for folder_name in selected_folders:
                 folder_path = os.path.join('C:/Users/AT83190/Desktop/application/scene', folder_name)
                 nouveau = shutil.copytree(folder_path, os.path.join(tempo, folder_name))
                 scene_file_path = os.path.join(tempo, folder_name, 'scene.pbrt')
-                output = os.path.join(".", "rendus", version_name, date, folder_name +'.png' )                
+                output = os.path.join(".", "media" ,"rendus", version_name, date, folder_name +'.png' )                
                 with open(scene_file_path, 'r') as f:
                     scene_content = f.read()
                     
@@ -237,19 +238,50 @@ def get_subfolders(request):
     subfolders = []
 
     if source_folder:
-        source_path = os.path.join(".", "rendus", source_folder)
+        source_path = os.path.join(".", "media" ,"rendus", source_folder)
         if os.path.exists(source_path):
             subfolders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
 
     return JsonResponse(subfolders, safe=False)
 
-def display_images(request, source_folder, destination_folder):
-    # ... Votre code existant ...
-    image_urls = [os.path.join("/", "rendus", source_folder, destination_folder, image) for image in image_files]
 
-    # Générer le contenu HTML avec les images
-    image_html = ''
-    for image_url in image_urls:
-        image_html += f'<img src="{image_url}" alt="Image">'
+def view_all_images(request):
+    selected_folders = request.GET.getlist('selected_folder')
+    selected_subfolders = request.GET.getlist('selected_subfolder')
 
-    return HttpResponse(image_html)
+    print("Selected Folders:", selected_folders)
+    print("Selected Subfolders:", selected_subfolders)
+
+    if len(selected_folders) == len(selected_subfolders) and len(selected_folders) > 1:
+        image_data = {}
+
+        for i, selected_folder in enumerate(selected_folders):
+            selected_subfolder_list = selected_subfolders[i].split(';')
+            subfolder_path = "/".join(selected_subfolder_list)
+            subfolder_path = subfolder_path.replace(':', ';')
+            base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
+            image_files = [f for f in os.listdir(base_path) if f.lower().endswith('.png')]
+
+            for image_file in image_files:
+                image_name = os.path.splitext(image_file)[0]
+                image_path = os.path.join(settings.MEDIA_URL, "rendus", selected_folder, subfolder_path, image_file).replace("\\", "/")
+
+                if image_name not in image_data:
+                    image_data[image_name] = {}
+                if selected_folder not in image_data[image_name]:
+                    image_data[image_name][selected_folder] = []
+                image_data[image_name][selected_folder].append(image_path)
+
+        context = {
+            'image_data': image_data,
+        }
+        return render(request, 'image_gallery.html', context)
+
+    return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
+
+
+
+
+
+
+
