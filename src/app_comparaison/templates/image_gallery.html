@@ -1,121 +1,62 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Gallery</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Image Gallery with Jeri</title>
     <style>
-        /* Styles for tabs and tab content here... */
-        .tabs {
-            display: flex;
-            flex-direction: row;
-            margin-bottom: 10px;
+        .stretch {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0; right: 0; top: 0; bottom: 0;
         }
-
-        .tab, .sub-tab {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        .tab.selected, .sub-tab.selected {
-            background-color: #ddd;
-        }
-
-        .sub-tabs-container {
-            border: 1px solid #ccc;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            width: 50%; /* Set width to 50% to occupy half of the view horizontally */
-        }
-
-        .images-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .image-container {
-            flex: 0 0 calc(25% - 20px);
-            margin: 10px;
-            text-align: center;
-        }
-
-        .image-container img {
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* Display sub-tabs inline */
-        .sub-tab {
-            display: inline-block;
-            margin-right: 10px;
+        body {
+            font-family: sans-serif;
         }
     </style>
+    <script>
+        window.resourceBaseUrl = '/';
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.js"></script>
+    <script src="{% static 'jeri/jeri.js' %}"></script>
 </head>
 <body>
-    <h1>Images</h1>
-    
-    <div class="tabs">
-        <!-- Onglets principaux -->
-        {% for image_name, image_data in image_data.items %}
-            <div class="tab" data-tab="{{ image_name }}" onclick="showTabContent('{{ image_name }}')">{{ image_name }}</div>
-        {% endfor %}
-    </div>
-
-    <div class="sub-tabs-container">
-        <!-- Sous-onglets pour chaque onglet principal -->
-        {% for image_name, folder_data in image_data.items %}
-            <div class="tab-content" id="tab-content-{{ image_name }}" style="display: none;">
-                <div class="sub-tabs">
-                    {% for folder_name, folder_images in folder_data.items %}
-                        <div class="sub-tab" data-image="{{ image_name }}" data-tab="{{ folder_name }}" onclick="showSubTabContent(this)">{{ folder_name }}</div>
-                    {% endfor %}
-                </div>
-                <div class="sub-tab-contents">
-                    {% for folder_name, folder_images in folder_data.items %}
-                        <div class="sub-tab-content" id="sub-tab-content-{{ image_name }}-{{ folder_name }}" style="display: none;">
-                            {% for image_path in folder_images %}
-                                <div class="image-container">
-                                    <img src="{{ image_path }}" alt="{{ folder_name }}">
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endfor %}
-    </div>
+    <div id="root" class="stretch"></div>
 
     <script>
-        // JavaScript code for showing/hiding tab and sub-tab content here...
-        function showTabContent(imageName) {
-            var tabContents = document.querySelectorAll('.tab-content');
-            for (var i = 0; i < tabContents.length; i++) {
-                tabContents[i].style.display = 'none';
+        const imageData = {{ image_data|safe }};
+        
+        const data = {
+            title: 'root',
+            children: []
+        };
+
+        // creer la structure jeri
+        for (const imageName in imageData) {
+            const folderData = imageData[imageName];
+            const imageItem = {
+                title: imageName,
+                children: []
+            };
+
+            for (const folderName in folderData) {
+                const imagePaths = folderData[folderName];
+                for (const imagePath of imagePaths) {
+                    imageItem.children.push({
+                        title: folderName,
+                        image: imagePath
+                    });
+                }
             }
-            var tabs = document.querySelectorAll('.tab');
-            for (var i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('selected');
-            }
-            document.getElementById('tab-content-' + imageName).style.display = 'block';
-            var selectedTab = document.querySelector('.tab[data-tab="' + imageName + '"]');
-            selectedTab.classList.add('selected');
+
+            data.children.push(imageItem);
         }
-    
-        function showSubTabContent(subTab) {
-            var imageName = subTab.getAttribute('data-image');
-            var folderName = subTab.getAttribute('data-tab');
-            
-            var subTabContents = document.querySelectorAll('.sub-tab-content');
-            for (var i = 0; i < subTabContents.length; i++) {
-                subTabContents[i].style.display = 'none';
-            }
-            var subTabs = document.querySelectorAll('.sub-tab');
-            for (var i = 0; i < subTabs.length; i++) {
-                subTabs[i].classList.remove('selected');
-            }
-            document.getElementById('sub-tab-content-' + imageName + '-' + folderName).style.display = 'block';
-            subTab.classList.add('selected');
-        }
+
+        // affichage
+        Jeri.renderViewer(document.getElementById('root'), data);
     </script>
 </body>
 </html>

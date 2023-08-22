@@ -283,12 +283,7 @@ def view_all_images(request):
         context = {
             'image_data': filtered_image_data,
         }
+        print(context)
         return render(request, 'image_gallery.html', context)
 
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
-
-
-
-
-
-
