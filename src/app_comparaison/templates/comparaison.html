@@ -3,26 +3,57 @@
 <head>
     <title>Comparaison de Configurations</title>
     {% load static %}
+    <style>           
+        /* Style pour la liste de configurations */
+        .config-list-container {
+            position: fixed; 
+            right: 0;
+            width: 33%;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 <body>
     <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Comparaison</h1>
-    <div id="selections-container" style="margin-top:350px; left: 20px;">
-        <div class="selection-group">
-            <label for="select_config">Version :</label>
-            <select class="source_select" style="width: 200px">
-                <option value="" disabled selected>Choisir</option>
-                {% for folder in folders %}
-                <option value="{{ folder }}">{{ folder }}</option>
+    <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
+    <h2 style="position: absolute; top: 200px; right: 190px;">Configurations</h2>
+    <div class="config-list-container">    
+        <div id="config-list">
+            {% for config in configurations %}
+                <h2>Configuration "{{ config.name }}":</h2>
+                {% for version in config.versions %}
+                    <h3>Version {{ version.version_id }}:</h3>
+                    <ul>
+                        {% for param in version.parameters %}
+                            <li>  Type : "{{ param.Type }}" ,  Parametre : "{{ param.Parametre }}", Valeur : "{{ param.Valeur }}"</li>
+                        {% endfor %}
+                    </ul>
                 {% endfor %}
-            </select>
-            <label for="select_config" style="margin-left: 15px">Date :</label>
-            <select class="destination_select" style="margin-left: 15px; width: 200px">
-                <option value="" disabled selected>Choisir</option>
-            </select>
-            <br>
+            {% endfor %}
         </div>
     </div>
 
+    </div id="generation-form">     
+        <div id="selections-container" style="margin-top:250px; left: 20px;">
+            <div class="selection-group">
+                <label for="select_config">Version :</label>
+                <select class="source_select" style="width: 200px">
+                    <option value="" disabled selected>Choisir</option>
+                    {% for folder in folders %}
+                    <option value="{{ folder }}">{{ folder }}</option>
+                    {% endfor %}
+                </select>
+                <label for="select_config" style="margin-left: 15px">Date :</label>
+                <select class="destination_select" style="margin-left: 15px; width: 200px">
+                    <option value="" disabled selected>Choisir</option>
+                </select>
+                <br>
+            </div>
+        </div>
+    </div>
     <button id="add_selection">+</button>
     <button id="view-all-images">Voir toutes les images</button>
 

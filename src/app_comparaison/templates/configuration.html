@@ -60,28 +60,40 @@
         /* Style pour les champs de texte dans le tableau */
         table input[type="text"] {
             width: 100%;
-            box-sizing: border-box; /* Inclure le padding et la bordure dans la largeur */
+            box-sizing: border-box;
+        }
+
+        /* Style pour la liste de configurations */
+        .config-list-container {
+            position: fixed;
+            top: 245px; /* Ajustez la position verticale pour correspondre aux onglets */
+            right: 0;
+            width: 33%; /* Ajustez la largeur selon vos besoins */
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
         }
     </style>
     {% load static %}
 </head>
 <body>
-    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 65px; font-family: Inter; font-weight: 300; word-wrap: break-word; transform: translateX(-50%);">Gestion des configuration</h1>
-    <div>
-        <!-- Onglets -->
+    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 65px; font-family: Inter; font-weight: 300; word-wrap: break-word; transform: translateX(-50%);">Gestion des configurations</h1>
+    <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
+    
+    <div class="tab-container">
         <div class="tab selected" onclick="showTabContent(1)">Nouvelle configuration</div>
         <div class="tab" onclick="showTabContent(2)">Nouvelle Version</div>
     </div>
 
-    <div>
+    <div class="tab-content-container">
         <!-- Contenu de l'onglet 1 -->
         <div class="tab-content active" id="tab-content-1">
             {% csrf_token %}
             <!-- Insérez ici le contenu de la première sous-vue -->
             <label for="name_scene">Nom de configuration :</label>
             <input type="text" style="margin-left:10px" id="name_config" name="name_config">
-            
-        
+                    
             <h2 style="margin-top: 20px;">Parametres</h2>
             <table id="config-table">
                 <thead>
@@ -137,8 +149,25 @@
             <div class="add-row" onclick="addRow('config-table2')">+</div>
             <br>
             <button type="button" id="validatefolder2" style="width: 180px; height: 35px;" onclick="sendDataToBackend2()">Envoyer</button>
-            </div>
         </div>
+    </div>
+
+    <div class="config-list-container">    
+        <div id="config-list">
+            {% for config in configurations %}
+                <h2>Configuration "{{ config.name }}":</h2>
+                {% for version in config.versions %}
+                    <h3>Version {{ version.version_id }}:</h3>
+                    <ul>
+                        {% for param in version.parameters %}
+                            <li>  Type : "{{ param.Type }}" ,  Parametre : "{{ param.Parametre }}", Valeur : "{{ param.Valeur }}"</li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+    
     <script src="{% static 'js/config.js' %}?v={% now "U" %}"></script>
 </body>
 </html>

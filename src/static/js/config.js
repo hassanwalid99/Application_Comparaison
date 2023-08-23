@@ -52,6 +52,11 @@ function sendDataToBackend() {
         return; // Ne pas envoyer les données si les champs sont vides
     }
 
+    if (parameters.some(param => !["string", "bool", "float", "integer"].includes(param.Type))) {
+        alert('Veuillez entrer un type valide (string, bool, float, integer)');
+        return;
+    }
+
     // Création de l'objet FormData pour envoyer les données
     const formData = new FormData();
     formData.append('name_config', nameConfig);
@@ -94,6 +99,12 @@ function sendDataToBackend2() {
         alert('Veuillez remplir tous les champs.');
         return; // Ne pas envoyer les données si les champs sont vides
     }
+
+    if (parameters.some(param => !["string", "bool", "float", "integer"].includes(param.Type))) {
+        alert('Veuillez entrer un type valide (string, bool, float, integer)');
+        return;
+    }
+
     // Création de l'objet FormData pour envoyer les données
     const formData = new FormData();
     formData.append('name_select', selectedConfig);

@@ -17,18 +17,43 @@ from django.http import HttpResponse
 from django.conf import settings
 
 
+def collect_configurations():
+    db = TinyDB('configurations.json')
+    table_names = db.tables()
+
+    configurations = []
+
+    for table_name in table_names:
+        config_versions = []
+        records = db.table(table_name).all()
+
+        for record in records:
+            version_id = int(record.doc_id)
+            parameters = json.loads(record['config']['parameters'])
+            config_versions.append({
+                'version_id': version_id,
+                'parameters': parameters
+            })
+
+        configurations.append({
+            'name': table_name,
+            'versions': config_versions
+        })
+
+    return configurations
 
 def accueil(request):
     return render(request, 'accueil.html')
 
 def scene(request):
-    directory_path = "C:/Users/AT83190/Desktop/application/scene"
+    directory_path = os.path.join(".", "media" ,"scene")
     folders = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
     folders.sort()
     return render(request, 'scene.html', {'folders': folders})
 
 def configuration(request):
-    return render(request, 'configuration.html')
+    configurations = collect_configurations()
+    return render(request, 'configuration.html', {'configurations': configurations})
 
 def generation(request):  
     db = TinyDB('configurations.json')
@@ -43,27 +68,26 @@ def generation(request):
             version_name = f"{table_name}.{version.doc_id}"
             table_versions.append(version_name)
     
-    directory_path = "C:/Users/AT83190/Desktop/application/scene"
+    directory_path = os.path.join(".", "media" ,"scene")
     folders = [folder for folder in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, folder))]
     
-
-    return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders})
-
+    configurations = collect_configurations()
+    return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders, 'configurations': configurations})
 
 def comparaison(request):
     if request.method == 'GET':
         source_path = os.path.join(".", "media" ,"rendus")
         if os.path.exists(source_path):
             folders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
-            return render(request, 'comparaison.html', {'folders': folders})
+            configurations = collect_configurations()
+            return render(request, 'comparaison.html', {'folders': folders, 'configurations': configurations})
     return render(request, 'comparaison.html', {'folders': []}) 
-
 
 @require_POST
 def delete_folder_view(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         folder_name = request.POST.get('folderName')
-        directory_path = "C:/Users/AT83190/Desktop/application/scene"
+        directory_path = os.path.join(".", "media" ,"scene")
 
         try:
             folder_path = os.path.join(directory_path, folder_name)
@@ -79,7 +103,7 @@ def delete_folder_view(request):
 
 @require_POST
 def upload_zip_file(request):
-    directory_path = "C:/Users/AT83190/Desktop/application/scene"
+    directory_path = os.path.join(".", "media" ,"scene")
     if request.method == 'POST' and request.FILES.get('zip_file'):
         new_name = request.POST.get('Name')
         image_file = request.FILES['image_file']
@@ -97,30 +121,38 @@ def upload_zip_file(request):
                         if os.path.exists(os.path.join(directory_path, new_name)):
                             return JsonResponse({'success': False, 'error': 'Un dossier avec le nom existe déjà dans le répertoire cible'})
                         else:
+                            
                             dossier_tempo = os.path.join(directory_path, "tempo")
                             os.makedirs(dossier_tempo)                           
                             zip_ref.extractall(dossier_tempo)
                             os.rename(os.path.join(dossier_tempo , ancien_nom[:-4]) , os.path.join(directory_path , new_name) )
-                            os.rmdir(dossier_tempo)  
+                            os.rmdir(dossier_tempo) 
                             
-                                                                  
-                            with open(os.path.join(directory_path , new_name, image_file.name), 'wb') as destination_file:
-                                shutil.copyfileobj(image_file, destination_file)
-                            os.rename(os.path.join(directory_path , new_name, image_file.name) , os.path.join(directory_path , new_name, new_name+file_extension))
-      
-                            message = "Le type de fichier .pbrt est présent dans le dossier .zip."
-                            return JsonResponse({'success': True, 'message': message})
-
-
+                            with open(os.path.join(directory_path, new_name, 'scene.pbrt'), 'r') as scene_file:
+                                scene_content = scene_file.read()
+                                
+                            if '%%PARAMS%%' in scene_content and '%%OUTPUT%%' in scene_content:                                                               
+                                with open(os.path.join(directory_path , new_name, image_file.name), 'wb') as destination_file:
+                                    shutil.copyfileobj(image_file, destination_file)
+                                os.rename(os.path.join(directory_path , new_name, image_file.name) , os.path.join(directory_path , new_name, new_name+file_extension))
+        
+                                message = "Le type de fichier scene.pbrt est présent dans le dossier .zip."
+                                return JsonResponse({'success': True, 'message': message})
+                            else :
+                                shutil.rmtree(os.path.join(directory_path, new_name))
+                                message = "Le fichier scene.pbrt ne contient pas les indices %%PARAMS%% et %%OUTPUT%%."
+                                return JsonResponse({'success': False, 'error': message})
+                                    
             # Aucun fichier .pbrt trouvé dans le zip
-            message = "Le type de fichier .pbrt n'est pas présent dans le dossier .zip."
+            message = "Le type de fichier scene.pbrt n'est pas présent dans le dossier .zip."
             return JsonResponse({'success': False,'error': message})
-
+            
         except zipfile.BadZipFile:
             message = "Le fichier téléchargé n'est pas un fichier .zip valide."
             return JsonResponse({'success': False,'error': message}, status=400)
         except Exception as e:
             message = "Une erreur s'est produite lors de la vérification du fichier .zip."
+            shutil.rmtree(os.path.join(directory_path, "tempo"))
             return JsonResponse({'success': False,'error': message}, status=500)
 
     # Réponse JSON en cas d'erreur ou si le formulaire n'est pas correctement rempli
@@ -169,6 +201,7 @@ def save_version(request):
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
     else:
         return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
+     
         
 def get_table_names(request):
     db = TinyDB('configurations.json')
@@ -201,7 +234,7 @@ def get_parameters(request):
             
             
             for folder_name in selected_folders:
-                folder_path = os.path.join('C:/Users/AT83190/Desktop/application/scene', folder_name)
+                folder_path = os.path.join(".", "media" ,"scene", folder_name)
                 nouveau = shutil.copytree(folder_path, os.path.join(tempo, folder_name))
                 scene_file_path = os.path.join(tempo, folder_name, 'scene.pbrt')
                 output = os.path.join(".", "media" ,"rendus", version_name, date, folder_name +'.png' )                
@@ -233,6 +266,7 @@ def get_parameters(request):
                 
     return JsonResponse({'success': True})
 
+
 def get_subfolders(request):
     source_folder = request.GET.get('source')
     subfolders = []
@@ -243,6 +277,7 @@ def get_subfolders(request):
             subfolders = [f for f in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, f))]
 
     return JsonResponse(subfolders, safe=False)
+
 
 def view_all_images(request):
     selected_folders = request.GET.getlist('selected_folder')

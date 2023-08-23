@@ -61,9 +61,29 @@ document.addEventListener("DOMContentLoaded", function() {
     const envoiebutton = document.getElementById("validatefolder");
 
     envoiebutton.addEventListener("click", function() {
-    const inputNameScene  = document.getElementById('name_scene');    
-    const scenename = inputNameScene.value;   
-        uploadZipFile(scenename)
+        const inputNameScene = document.getElementById('name_scene');
+        const scenename = inputNameScene.value;
+    
+        // Vérification des champs
+        if (scenename.trim() === '') {
+            alert('Veuillez entrer un nom de scène.');
+            return;
+        }
+    
+        const zipFileInput = document.getElementById('zip_file');
+        const imageFileInput = document.getElementById('image_file');
+    
+        if (!zipFileInput.files.length) {
+            alert('Veuillez choisir un fichier ZIP.');
+            return;
+        }
+    
+        if (!imageFileInput.files.length) {
+            alert('Veuillez choisir une image de référence.');
+            return;
+        }
+    
+        uploadZipFile(scenename);
     });
 
     // Envoie le fichier .zip sélectionné au backend via une requête AJAX
