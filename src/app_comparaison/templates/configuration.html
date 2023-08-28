@@ -3,6 +3,15 @@
 <head>
     <title>Ma Vue avec Onglets</title>
     <style>
+        .delete-row {
+            background-color: white;
+            color: red;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-right: -15px;
+        }
+
         /* Style pour la barre d'onglets */
         .tab {
             display: inline-block;
@@ -80,7 +89,7 @@
 <body>
     <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 65px; font-family: Inter; font-weight: 300; word-wrap: break-word; transform: translateX(-50%);">Gestion des configurations</h1>
     <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
-    
+
     <div class="tab-container">
         <div class="tab selected" onclick="showTabContent(1)">Nouvelle configuration</div>
         <div class="tab" onclick="showTabContent(2)">Nouvelle Version</div>

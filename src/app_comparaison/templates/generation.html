@@ -34,6 +34,27 @@
             padding: 20px;
             border: 1px solid #ccc;
         }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+        }
+        
+        .popup-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -66,7 +87,7 @@
             <button type="button" onclick="document.getElementById('exe_input').click();">Choisir un Moteur</button>
             <input type="text" style="margin-left: 3px; width: 400px;" id="selected_exe" name="selected_exe" readonly>
         </div>     
-        <button type="submit" style="position: absolute; top: 730px; left: 200px; width: 200px; height: 50px;">Generer</button>
+        <button type="submit" style="position: absolute; top: 730px; left: 200px; width: 200px; height: 50px;" >Generer</button>
     </form>
     <h2 style="position: absolute; top: 180px; right: 190px;">Configurations</h2>
     <div class="config-list-container">    
@@ -82,6 +103,13 @@
                     </ul>
                 {% endfor %}
             {% endfor %}
+        </div>
+    </div>
+
+    <div id="progress-popup" class="popup">
+        <div class="popup-content">
+            <div class="progress-message">Generation en cours...</div>
+
         </div>
     </div>
 

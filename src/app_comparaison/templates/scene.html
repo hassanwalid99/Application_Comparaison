@@ -16,14 +16,22 @@
             display: inline-block;
             margin-right: 5px;
         }
+        .centered-image {
+            max-width: 500px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
     {% load static %}
 </head>
 <body>
+    <div id="image-bubble" style="top: 200px;"></div>
     <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des scenes</h1>
     <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
     <div style="float: right; width: 25%;">
-        <h2 style="margin-top: 150px;">Liste des Dossiers</h2>
+        <h2 style="margin-top: 200px;">Liste des Dossiers</h2>
         <div class="folder-list" id="folder-list">
             {% for folder in folders %}
                 <div class="folder-item" data-folder="{{ folder }}">
@@ -58,6 +66,7 @@
             </form>
         </div>
     </div>
-    <script src="{% static 'js/main.js' %}?v={% now "U" %}"></script>
+    <script src="{% static 'js/main.js' %}?v={% now "U" %}" data-static-media-scene="{% static 'media/scene' %}"></script>
+
 </body>
 </html>

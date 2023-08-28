@@ -17,11 +17,25 @@
     </style>
 </head>
 <body>
+    <div id="image-lists" style="position: absolute; top: 230px; left:650px;" >
+        <h2 style="color: green;" >Images Affichées:</h2>
+        <ul class="selected-images-list"></ul>
+        
+        <h2 style="color: red;">Images Non Affichées:</h2>
+        <ul class="selected-images-not-displayed-list">
+            {% for imageName in images_not_displayed %}
+                <li title="Dossiers où l'image manque : {% for folder in image_missing_info.imageName %}{{ folder }} / {% endfor %}">
+                    {{ imageName }}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
     <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Comparaison</h1>
     <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
-    <h2 style="position: absolute; top: 200px; right: 190px;">Configurations</h2>
     <div class="config-list-container">    
         <div id="config-list">
+            <h2 style="margin-left:180px; margin-top:-10px; ">Configurations</h2>
             {% for config in configurations %}
                 <h2>Configuration "{{ config.name }}":</h2>
                 {% for version in config.versions %}
@@ -34,6 +48,7 @@
                 {% endfor %}
             {% endfor %}
         </div>
+        
     </div>
 
     </div id="generation-form">     
@@ -51,12 +66,12 @@
                     <option value="" disabled selected>Choisir</option>
                 </select>
                 <br>
+                <br>
             </div>
-        </div>
+        </div>   
     </div>
     <button id="add_selection">+</button>
-    <button id="view-all-images">Voir toutes les images</button>
-
+    <button id="view-all-images" style="position: absolute; margin-top: 80px; left: 200px; width: 200px; height: 50px;">Comparer</button>
     <script src="{% static 'js/compar.js' %}"></script>
 </body>
 </html>

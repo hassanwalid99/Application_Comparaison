@@ -83,6 +83,28 @@ def comparaison(request):
             return render(request, 'comparaison.html', {'folders': folders, 'configurations': configurations})
     return render(request, 'comparaison.html', {'folders': []}) 
 
+
+def get_image(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))  
+            folder_name = data.get('folderName')
+            print('Folder Name:', folder_name)
+
+            if folder_name is None:
+                return JsonResponse({'success': False, 'error': 'Folder name is missing.'})
+
+            image_url = os.path.join("..", "media", "scene", folder_name, folder_name + ".png").replace("\\", "/")
+            print('url:', image_url)
+
+            return JsonResponse({'success': True, 'imageURL': image_url})
+
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON data.'})
+
+    return JsonResponse({'success': False})
+
+
 @require_POST
 def delete_folder_view(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -278,6 +300,20 @@ def get_subfolders(request):
 
     return JsonResponse(subfolders, safe=False)
 
+def get_image_names(request):
+    selected_folders = request.GET.getlist('selected_folder')
+    selected_subfolders = request.GET.getlist('selected_subfolder')
+    print(selected_subfolders)
+    image_names = []
+
+    if len(selected_folders) == len(selected_subfolders) and len(selected_folders) > 0:
+        for i, selected_folder in enumerate(selected_folders):
+            selected_subfolder = selected_subfolders[i]
+            subfolder_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, selected_subfolder)
+            image_files = [f for f in os.listdir(subfolder_path) if f.lower().endswith('.png')]
+            image_names.extend(image_files)
+
+    return JsonResponse(image_names, safe=False)
 
 def view_all_images(request):
     selected_folders = request.GET.getlist('selected_folder')
@@ -322,3 +358,45 @@ def view_all_images(request):
         return render(request, 'image_gallery.html', context)
 
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
+
+def check_image_presence(request):
+    selected_folders = request.GET.getlist('selected_folder')
+    selected_subfolders = request.GET.getlist('selected_subfolder')
+
+    images_to_display = set()
+    images_not_displayed = set()
+    image_missing_info = {}  # Nouveau dictionnaire pour stocker les dossiers manquants par image
+
+    if len(selected_subfolders) >= 2:
+        all_images = {}  # Dictionnaire pour stocker les images de chaque sous-dossier
+
+        for i, selected_folder in enumerate(selected_folders):
+            selected_subfolder_list = selected_subfolders[i].split(';')
+            subfolder_path = "/".join(selected_subfolder_list)
+            subfolder_path = subfolder_path.replace(':', ';')
+            base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
+            image_files = set([f for f in os.listdir(base_path) if f.lower().endswith('.png')])
+            all_images[selected_subfolders[i]] = image_files
+
+        for subfolder in selected_subfolders:
+            for image in all_images[subfolder]:
+                missing_subfolders = set(selected_subfolders)
+                missing_subfolders.remove(subfolder)
+
+                for other_subfolder in missing_subfolders:
+                    if image not in all_images[other_subfolder]:
+                        images_not_displayed.add(image)
+                        if image not in image_missing_info:
+                            image_missing_info[image] = []
+                        image_missing_info[image].append(f"{selected_folders[selected_subfolders.index(other_subfolder)]}/{other_subfolder}")
+
+                if image not in images_not_displayed:
+                    images_to_display.add(image)
+
+    data = {
+        'images_to_display': list(images_to_display),
+        'images_not_displayed': list(images_not_displayed),
+        'image_missing_info': image_missing_info,
+    }
+
+    return JsonResponse(data)

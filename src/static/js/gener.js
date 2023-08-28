@@ -1,5 +1,3 @@
-// gener.js
-
 document.addEventListener("DOMContentLoaded", function () {
     
     const generationForm = document.getElementById("generation-form");
@@ -20,8 +18,21 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    function showProgressBar() {
+        const popup = document.getElementById('progress-popup');
+        popup.style.display = 'block';
+    }
+    
+    function hideProgressBar() {
+        const popup = document.getElementById('progress-popup');
+        popup.style.display = 'none';
+    } 
+    
+
     generationForm.addEventListener("submit", function (event) {
         event.preventDefault();
+        showProgressBar(); // Afficher la fenêtre contextuelle
+        
         const selectedVersions = Array.from(versionCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
         const selectedFolders = Array.from(folderCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
         
@@ -52,8 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(response => response.json())
         .then(data => {
             console.log("Parameters of selected versions:", data);
-            
-            
+            hideProgressBar();           
         });
     });
 

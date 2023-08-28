@@ -19,6 +19,10 @@ urlpatterns = [
     path('get_parameters/', views.get_parameters, name='get_parameters'),
     path('get_subfolders/', views.get_subfolders, name='get_subfolders'),
     path('view_all_images/', views.view_all_images, name='view_all_images'),
+    path('get_image_names/', views.get_image_names, name='get_image_names'),
+    path('check_image_presence/', views.check_image_presence, name='check_image_presence'),
+    path('get_image/', views.get_image, name='get_image'),
+
 ] 
 
 if settings.DEBUG:
