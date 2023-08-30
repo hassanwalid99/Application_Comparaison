@@ -15,6 +15,13 @@ from tinydb import TinyDB, Query
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.conf import settings
+import OpenEXR
+import Imath
+import numpy as np
+from PIL import Image
+
+
+
 
 
 def collect_configurations():
@@ -74,6 +81,7 @@ def generation(request):
     configurations = collect_configurations()
     return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders, 'configurations': configurations})
 
+
 def comparaison(request):
     if request.method == 'GET':
         source_path = os.path.join(".", "media" ,"rendus")
@@ -103,7 +111,6 @@ def get_image(request):
             return JsonResponse({'success': False, 'error': 'Invalid JSON data.'})
 
     return JsonResponse({'success': False})
-
 
 @require_POST
 def delete_folder_view(request):
@@ -157,7 +164,42 @@ def upload_zip_file(request):
                                 with open(os.path.join(directory_path , new_name, image_file.name), 'wb') as destination_file:
                                     shutil.copyfileobj(image_file, destination_file)
                                 os.rename(os.path.join(directory_path , new_name, image_file.name) , os.path.join(directory_path , new_name, new_name+file_extension))
-        
+                                
+                                if file_extension == ".exr":
+                                    exr_file = OpenEXR.InputFile(os.path.join(directory_path , new_name, new_name+file_extension))
+                                    header = exr_file.header()
+                                    dw = header['dataWindow']
+                                    width = dw.max.x - dw.min.x + 1
+                                    height = dw.max.y - dw.min.y + 1
+
+                                    redstr = exr_file.channel('R', Imath.PixelType(Imath.PixelType.FLOAT))
+                                    greenstr = exr_file.channel('G', Imath.PixelType(Imath.PixelType.FLOAT))
+                                    bluestr = exr_file.channel('B', Imath.PixelType(Imath.PixelType.FLOAT))
+
+                                    red = np.frombuffer(redstr, dtype=np.float32)
+                                    green = np.frombuffer(greenstr, dtype=np.float32)
+                                    blue = np.frombuffer(bluestr, dtype=np.float32)
+
+                                    print("Red min:", np.nanmin(red))
+                                    print("Red max:", np.nanmax(red))
+                                    print("Green min:", np.nanmin(green))
+                                    print("Green max:", np.nanmax(green))
+                                    print("Blue min:", np.nanmin(blue))
+                                    print("Blue max:", np.nanmax(blue))
+
+                                    # Ignore NaN and inf values for normalization
+                                    red = np.nan_to_num(red)
+                                    green = np.nan_to_num(green)
+                                    blue = np.nan_to_num(blue)
+
+                                    image_data = np.dstack((red, green, blue))
+
+                                    image_data = (image_data - image_data.min()) / (image_data.max() - image_data.min())
+                                    image_data = (image_data * 255).astype(np.uint8)
+
+                                    img = Image.fromarray(image_data, 'RGB')
+                                    img.save(os.path.join(directory_path , new_name, new_name+".png"), format="PNG")
+                                            
                                 message = "Le type de fichier scene.pbrt est présent dans le dossier .zip."
                                 return JsonResponse({'success': True, 'message': message})
                             else :

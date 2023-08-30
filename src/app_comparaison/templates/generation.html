@@ -55,9 +55,17 @@
             border-radius: 5px;
             text-align: center;
         }
+        .centered-image {
+            max-width: 400px;
+            position: absolute;
+            top: 53%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body>
+    <div id="image-bubble" style="top: 200px;"></div>
     <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 80px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des Rendus</h1>
     <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
     
@@ -113,6 +121,5 @@
         </div>
     </div>
 
-    <script src="{% static 'js/gener.js' %}"></script>
-</body>
+    <script src="{% static 'js/gener.js' %}?v={% now "U" %}" data-static-media-scene="{% static 'media/scene' %}"></script></body>
 </html>

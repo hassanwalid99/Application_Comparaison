@@ -28,6 +28,48 @@ document.addEventListener("DOMContentLoaded", function () {
         popup.style.display = 'none';
     } 
     
+    const folderItems = document.querySelectorAll(".folder-item");
+    const imageBubble = document.getElementById("image-bubble");
+
+    folderItems.forEach(folderItem => {
+        folderItem.addEventListener("mouseover", function() {
+            const folderName = folderItem.dataset.folder;
+            fetchAndDisplayImage(folderName, folderItem);
+        });
+    });
+
+    function fetchAndDisplayImage(folderName, folderItem) {
+        fetch('/get_image/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ folderName: folderName }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayImageInBubble(data.imageURL, folderItem);
+            }
+        })
+        .catch(error => console.error('Erreur', error));
+    }
+
+    function displayImageInBubble(imageURL, folderItem) {
+        imageBubble.innerHTML = `<img src="${imageURL}" alt="Image du dossier" class="centered-image">`;
+
+        folderItem.addEventListener("mouseout", function() {
+            hideImage();
+        });
+
+        imageBubble.style.display = "block";
+    }
+
+    function hideImage() {
+        imageBubble.innerHTML = ''; // Effacer le contenu de la bulle
+        imageBubble.style.display = "none";
+    }
 
     generationForm.addEventListener("submit", function (event) {
         event.preventDefault();
