@@ -19,10 +19,11 @@ import OpenEXR
 import Imath
 import numpy as np
 from PIL import Image
+import imageio
+import cv2
+import pyexr
 
-
-
-
+os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
 def collect_configurations():
     db = TinyDB('configurations.json')
@@ -81,7 +82,6 @@ def generation(request):
     configurations = collect_configurations()
     return render(request, 'generation.html', {'table_versions': table_versions, 'folders': folders, 'configurations': configurations})
 
-
 def comparaison(request):
     if request.method == 'GET':
         source_path = os.path.join(".", "media" ,"rendus")
@@ -90,7 +90,6 @@ def comparaison(request):
             configurations = collect_configurations()
             return render(request, 'comparaison.html', {'folders': folders, 'configurations': configurations})
     return render(request, 'comparaison.html', {'folders': []}) 
-
 
 def get_image(request):
     if request.method == 'POST':
@@ -130,6 +129,19 @@ def delete_folder_view(request):
 
     return JsonResponse({'success': False, 'error': 'Requête non valide.'})
 
+def exr_to_png(exr_file, png_file):
+    # Chargez l'image EXR
+    exr_image = pyexr.open(exr_file).get()
+
+    # Tonemap l'image EXR en une image LDR (8 bits par canal)
+    ldr_image = (np.power(np.clip(exr_image,0,1), 1/2.2) * 255).astype(np.uint8)
+
+    # Créez une image Pillow à partir de l'array NumPy
+    img = Image.fromarray(ldr_image, 'RGB')
+
+    # Enregistrez l'image au format PNG
+    img.save(png_file, format='PNG')    
+
 @require_POST
 def upload_zip_file(request):
     directory_path = os.path.join(".", "media" ,"scene")
@@ -166,40 +178,8 @@ def upload_zip_file(request):
                                 os.rename(os.path.join(directory_path , new_name, image_file.name) , os.path.join(directory_path , new_name, new_name+file_extension))
                                 
                                 if file_extension == ".exr":
-                                    exr_file = OpenEXR.InputFile(os.path.join(directory_path , new_name, new_name+file_extension))
-                                    header = exr_file.header()
-                                    dw = header['dataWindow']
-                                    width = dw.max.x - dw.min.x + 1
-                                    height = dw.max.y - dw.min.y + 1
-
-                                    redstr = exr_file.channel('R', Imath.PixelType(Imath.PixelType.FLOAT))
-                                    greenstr = exr_file.channel('G', Imath.PixelType(Imath.PixelType.FLOAT))
-                                    bluestr = exr_file.channel('B', Imath.PixelType(Imath.PixelType.FLOAT))
-
-                                    red = np.frombuffer(redstr, dtype=np.float32)
-                                    green = np.frombuffer(greenstr, dtype=np.float32)
-                                    blue = np.frombuffer(bluestr, dtype=np.float32)
-
-                                    print("Red min:", np.nanmin(red))
-                                    print("Red max:", np.nanmax(red))
-                                    print("Green min:", np.nanmin(green))
-                                    print("Green max:", np.nanmax(green))
-                                    print("Blue min:", np.nanmin(blue))
-                                    print("Blue max:", np.nanmax(blue))
-
-                                    # Ignore NaN and inf values for normalization
-                                    red = np.nan_to_num(red)
-                                    green = np.nan_to_num(green)
-                                    blue = np.nan_to_num(blue)
-
-                                    image_data = np.dstack((red, green, blue))
-
-                                    image_data = (image_data - image_data.min()) / (image_data.max() - image_data.min())
-                                    image_data = (image_data * 255).astype(np.uint8)
-
-                                    img = Image.fromarray(image_data, 'RGB')
-                                    img.save(os.path.join(directory_path , new_name, new_name+".png"), format="PNG")
-                                            
+                                   exr_to_png(os.path.join(directory_path , new_name, new_name+file_extension), os.path.join(directory_path , new_name, new_name+".png")) 
+                                         
                                 message = "Le type de fichier scene.pbrt est présent dans le dossier .zip."
                                 return JsonResponse({'success': True, 'message': message})
                             else :
@@ -265,8 +245,7 @@ def save_version(request):
         return JsonResponse({'message': 'Configuration enregistrée avec succès!'})
     else:
         return JsonResponse({'error': 'Méthode non autorisée'}, status=405)
-     
-        
+           
 def get_table_names(request):
     db = TinyDB('configurations.json')
     table_names_set = db.tables()
@@ -301,7 +280,11 @@ def get_parameters(request):
                 folder_path = os.path.join(".", "media" ,"scene", folder_name)
                 nouveau = shutil.copytree(folder_path, os.path.join(tempo, folder_name))
                 scene_file_path = os.path.join(tempo, folder_name, 'scene.pbrt')
-                output = os.path.join(".", "media" ,"rendus", version_name, date, folder_name +'.png' )                
+                if folder_name+".exr" in os.listdir(nouveau):
+                    output = os.path.join(".", "media" ,"rendus", version_name, date, folder_name +'.exr' )
+                else:
+                    output = os.path.join(".", "media" ,"rendus", version_name, date, folder_name +'.png' ) 
+                                                   
                 with open(scene_file_path, 'r') as f:
                     scene_content = f.read()
                     
@@ -329,7 +312,6 @@ def get_parameters(request):
             shutil.rmtree(tempo)
                 
     return JsonResponse({'success': True})
-
 
 def get_subfolders(request):
     source_folder = request.GET.get('source')
@@ -369,7 +351,8 @@ def view_all_images(request):
             subfolder_path = "/".join(selected_subfolder_list)
             subfolder_path = subfolder_path.replace(':', ';')
             base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
-            image_files = [f for f in os.listdir(base_path) if f.lower().endswith('.png')]
+            image_files = [f for f in os.listdir(base_path) if f.lower().endswith(('.png', '.exr'))]
+            
 
             for image_file in image_files:
                 image_name = os.path.splitext(image_file)[0]
@@ -396,7 +379,24 @@ def view_all_images(request):
         context = {
             'image_data': filtered_image_data,
         }
+        
+        for image_name, subfolder_data in filtered_image_data.items():
+            for subfolder_name, image_paths in subfolder_data.items():
+                new_image_paths = []  # Liste pour stocker les nouveaux chemins d'images
+                for image_path in image_paths:
+                    if image_path.lower().endswith('.exr'):
+                        png_file_path = os.path.splitext(image_path[1:])[0] + '.png'
+                        if not os.path.exists(png_file_path):
+                            exr_to_png(image_path[1:], png_file_path)
+                            new_image_path = '/' + png_file_path
+                            new_image_paths.append(new_image_path)
+                    else:
+                        new_image_paths.append(image_path)
+                subfolder_data[subfolder_name] = new_image_paths  # Mise à jour des chemins d'images dans le sous-dictionnaire
+
+        
         print(context)
+        
         return render(request, 'image_gallery.html', context)
 
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
@@ -417,7 +417,9 @@ def check_image_presence(request):
             subfolder_path = "/".join(selected_subfolder_list)
             subfolder_path = subfolder_path.replace(':', ';')
             base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
-            image_files = set([f for f in os.listdir(base_path) if f.lower().endswith('.png')])
+           
+                    
+            image_files = [f for f in os.listdir(base_path) if f.lower().endswith(('.png', '.exr'))]
             all_images[selected_subfolders[i]] = image_files
 
         for subfolder in selected_subfolders:
