@@ -22,6 +22,10 @@ from PIL import Image
 import imageio
 import cv2
 import pyexr
+import matplotlib.pyplot as plt
+import time
+COLOR_MAP = 'viridis'
+
 
 os.environ['OPENCV_IO_ENABLE_OPENEXR'] = 'TRUE'
 
@@ -257,7 +261,7 @@ def get_table_names(request):
 def get_parameters(request):
     selected_versions = request.POST.getlist('selected_versions[]')
     selected_folders = request.POST.getlist('selected_folders[]')
-    selected_exe = request.FILES['selected_exe']
+    engine_url = request.POST.get('engine_url')
     maintenant = datetime.now()
     date = maintenant.strftime("%Y-%m-%d_%H-%M-%S")
     db = TinyDB('configurations.json')
@@ -302,13 +306,38 @@ def get_parameters(request):
                 with open(scene_file_path, 'w') as f:
                     f.write(scene_content)
                 
-                exe_file_path = os.path.join(tempo, selected_exe.name)
-                with open(exe_file_path, 'wb') as exe_file:
-                    for chunk in selected_exe.chunks():
-                        exe_file.write(chunk)
                 
-                commande = [exe_file_path, scene_file_path]
-                subprocess.run(commande, shell=True)               
+                
+                commande = [engine_url, scene_file_path]
+                subprocess.run(commande, shell=True) 
+                # Obtenez le temps de début
+                temps_debut = time.time()
+
+                # Exécutez la commande
+                process = subprocess.Popen(commande, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+                while True:
+                    # Lisez la sortie standard et la sortie d'erreur de la commande (facultatif)s
+                    stdout, stderr = process.communicate()
+
+                    # Vérifiez si la commande s'est terminée
+                    if process.poll() is not None:
+                        break
+
+                    # Calculez le temps écoulé depuis le début
+                    temps_ecoule = time.time() - temps_debut
+
+                    # Estimez le temps restant (vous pouvez ajuster cette estimation en fonction de la progression de votre commande)
+                    # Ici, nous supposons que la commande est linéaire et que le temps restant est proportionnel au temps écoulé.
+                    temps_total_estime = temps_ecoule / (process.pid / 100)
+                    temps_restant = temps_total_estime - temps_ecoule
+
+                    print(f"Temps écoulé : {temps_ecoule:.2f} secondes")
+                    print(f"Temps restant estimé : {temps_restant:.2f} secondes")
+
+                # Vous pouvez également accéder au code de retour de la commande
+                code_retour = process.returncode
+                print(f"Code de retour de la commande : {code_retour}")              
             shutil.rmtree(tempo)
                 
     return JsonResponse({'success': True})
@@ -342,6 +371,9 @@ def get_image_names(request):
 def view_all_images(request):
     selected_folders = request.GET.getlist('selected_folder')
     selected_subfolders = request.GET.getlist('selected_subfolder')
+    selected_options = request.GET.get('selected_options', '').split(',')
+    
+
 
     if len(selected_folders) == len(selected_subfolders) and len(selected_folders) > 1:
         image_data = {}
@@ -351,9 +383,20 @@ def view_all_images(request):
             subfolder_path = "/".join(selected_subfolder_list)
             subfolder_path = subfolder_path.replace(':', ';')
             base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
-            image_files = [f for f in os.listdir(base_path) if f.lower().endswith(('.png', '.exr'))]
-            
-
+            image_files = []
+    
+            for f in os.listdir(base_path):
+                if f.lower().endswith('.png'):
+                    # Vérifiez si un fichier .exr existe avec le même nom (en supprimant l'extension .png)
+                    exr_filename = f[:f.rfind('.png')] + '.exr'
+                    exr_path = os.path.join(base_path, exr_filename)
+                    if not os.path.exists(exr_path):
+                        # Si le fichier .exr correspondant n'existe pas, ajoutez le .png à la liste
+                        image_files.append(f)
+                elif f.lower().endswith('.exr'):
+                    image_files.append(f)
+                
+                
             for image_file in image_files:
                 image_name = os.path.splitext(image_file)[0]
                 image_path = os.path.join(settings.MEDIA_URL, "rendus", selected_folder, subfolder_path, image_file).replace("\\", "/")
@@ -380,6 +423,34 @@ def view_all_images(request):
             'image_data': filtered_image_data,
         }
         
+        metric_results = {}
+
+        for image_name, subfolder_data in filtered_image_data.items():
+            for subfolder_name, image_paths in subfolder_data.items():
+                if os.path.isfile(os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")):
+                    reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")
+                else:
+                    reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.png")  
+
+                for image_path in image_paths:
+                    chemin = os.path.dirname(image_path[1:])
+                    #metrics = ['l1', 'l2', 'mrse', 'mape']  
+                    metric_results[image_name] = {}
+                    for metric in selected_options:
+                        error = compute_metric_from_files(reference_image_path, image_path[1:], metric, 1e-2)
+                        err_mean = np.mean(error)  
+                        fc = falsecolor(error, [0, 1], 1e-2)
+                        output = os.path.join(chemin , metric + "_" + image_name + ".png")
+                        print("chemin et metric ", image_path, metric)
+                        plt.imsave(output, fc)
+                        # Stocker le résultat dans un dictionnaire avec une structure appropriée
+                        if metric not in metric_results[image_name]:
+                            metric_results[image_name][metric] = {}
+                        if subfolder_name not in metric_results[image_name][metric]:
+                            metric_results[image_name][metric][subfolder_name] = {}
+                        metric_results[image_name][metric][subfolder_name][image_path] = error
+                    
+                     
         for image_name, subfolder_data in filtered_image_data.items():
             for subfolder_name, image_paths in subfolder_data.items():
                 new_image_paths = []  # Liste pour stocker les nouveaux chemins d'images
@@ -388,15 +459,14 @@ def view_all_images(request):
                         png_file_path = os.path.splitext(image_path[1:])[0] + '.png'
                         if not os.path.exists(png_file_path):
                             exr_to_png(image_path[1:], png_file_path)
-                            new_image_path = '/' + png_file_path
-                            new_image_paths.append(new_image_path)
+                        new_image_path = '/' + png_file_path
+                        new_image_paths.append(new_image_path)                     
                     else:
                         new_image_paths.append(image_path)
                 subfolder_data[subfolder_name] = new_image_paths  # Mise à jour des chemins d'images dans le sous-dictionnaire
 
         
-        print(context)
-        
+        #print(metric_results)
         return render(request, 'image_gallery.html', context)
 
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
@@ -417,9 +487,20 @@ def check_image_presence(request):
             subfolder_path = "/".join(selected_subfolder_list)
             subfolder_path = subfolder_path.replace(':', ';')
             base_path = os.path.join(settings.MEDIA_ROOT, "rendus", selected_folder, subfolder_path)
-           
-                    
-            image_files = [f for f in os.listdir(base_path) if f.lower().endswith(('.png', '.exr'))]
+                   
+            image_files = []
+    
+            for f in os.listdir(base_path):
+                if f.lower().endswith('.png'):
+                    # Vérifiez si un fichier .exr existe avec le même nom (en supprimant l'extension .png)
+                    exr_filename = f[:f.rfind('.png')] + '.exr'
+                    exr_path = os.path.join(base_path, exr_filename)
+                    if not os.path.exists(exr_path):
+                        # Si le fichier .exr correspondant n'existe pas, ajoutez le .png à la liste
+                        image_files.append(f)
+                elif f.lower().endswith('.exr'):
+                    image_files.append(f)
+            
             all_images[selected_subfolders[i]] = image_files
 
         for subfolder in selected_subfolders:
@@ -444,3 +525,58 @@ def check_image_presence(request):
     }
 
     return JsonResponse(data)
+
+def compute_metric_from_files(ref_path, test_path, metric, eps):
+    
+
+    # Charger les images de référence et de test en fonction de leurs extensions
+    ref = load_img(ref_path)
+    test = load_img(test_path)
+    # Assurez-vous que les images ont la même taille
+    if ref.shape != test.shape:
+        raise ValueError("Les images de référence et de test doivent avoir la même taille.")
+    # Calculer la différence entre les images
+    diff = np.array(ref - test)
+
+    if metric == 'l1':
+        error = np.abs(diff)
+    elif metric == 'l2':
+        error = diff * diff
+    elif metric == 'mrse':
+        error = diff * diff / (ref * ref + eps)
+    elif metric == 'mape':
+        error = np.abs(diff) / (ref + eps)
+    elif metric == 'smape':
+        error = 2 * np.abs(diff) / (ref + test + eps)
+    else:
+        raise ValueError('Métrique invalide')
+
+    return error
+
+def falsecolor(error, clip, eps):
+    """Compute false color heatmap."""
+    cmap = plt.get_cmap(COLOR_MAP)
+    mean = np.mean(error, axis=2)
+    min_val, max_val = clip
+    val = np.clip((mean - min_val) / (max_val - min_val + eps), 0, 1)
+    return cmap(val)
+
+def load_img(filepath):
+    """Load HDR or LDR image (either .hdr or .exr for HDR or .png for LDR)."""
+
+    if filepath.endswith('.exr'):
+        fp = pyexr.open(filepath)
+        img = np.array(fp.get(), dtype=np.float64)
+    elif filepath.endswith('.hdr'):
+        fp = cv2.imread(filepath, cv2.IMREAD_ANYDEPTH)
+        fp = cv2.cvtColor(fp, cv2.COLOR_BGR2RGB)
+        img = np.array(fp, dtype=np.float64)
+    elif filepath.endswith('.png'):
+        fp = cv2.imread(filepath)
+        fp = cv2.cvtColor(fp, cv2.COLOR_BGR2RGB)
+        # important to be signed, because some metrics' calculations can have intermediate negative values.
+        img = np.array(fp, dtype=np.int32)
+    else:
+        raise Exception('Only HDR and OpenEXR and PNG images are supported')
+
+    return img

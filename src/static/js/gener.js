@@ -4,19 +4,20 @@ document.addEventListener("DOMContentLoaded", function () {
     const versionCheckboxes = generationForm.querySelectorAll('.version-checkbox');
     const folderCheckboxes = generationForm.querySelectorAll('.folder-checkbox'); 
 
-    const exeInput = document.getElementById("exe_input");
-    const selectedExe = document.getElementById("selected_exe");
-    
-    exeInput.addEventListener("change", function () {
-        const fullPath = exeInput.value;
-        const startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-        const filename = fullPath.substring(startIndex);
-        if (filename.indexOf('\\') === 0 || filename.indexOf('/') === 0) {
-            selectedExe.value = filename.substring(1);
-        } else {
-            selectedExe.value = filename;
-        }
+    const engineUrlInput = document.getElementById("engine_url");
+
+    // Ajoutez le code pour sauvegarder et récupérer la valeur de l'URL du moteur ici
+    engineUrlInput.addEventListener("input", function () {
+        const engineUrl = engineUrlInput.value;
+        localStorage.setItem("engine_url", engineUrl);
     });
+    
+    // Récupérez la valeur de l'URL du moteur depuis le stockage local au chargement de la page
+    const storedEngineUrl = localStorage.getItem("engine_url");
+    
+    if (storedEngineUrl) {
+        engineUrlInput.value = storedEngineUrl;
+    }
 
     function showProgressBar() {
         const popup = document.getElementById('progress-popup');
@@ -74,39 +75,44 @@ document.addEventListener("DOMContentLoaded", function () {
     generationForm.addEventListener("submit", function (event) {
         event.preventDefault();
         showProgressBar(); // Afficher la fenêtre contextuelle
-        
+    
         const selectedVersions = Array.from(versionCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
         const selectedFolders = Array.from(folderCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
-        
-        
-        //console.log("Selected Versions:", selectedVersions);
-        //console.log("Selected Folders:", selectedFolders);
-
-        const formData = new FormData();
-        selectedVersions.forEach(version => {
-            formData.append('selected_versions[]', version);  // Note the "[]" in the name     
-        });
-
-        selectedFolders.forEach(folder => {
-            formData.append('selected_folders[]', folder);  // Note the "[]" in the name     
-        });
-
-        if (exeInput.files.length > 0) {
-            formData.append('selected_exe', exeInput.files[0]);  // Append the File object
+    
+        // Récupérez l'URL du moteur à partir de l'élément engine_url
+        const engineUrl = document.getElementById("engine_url").value;
+    
+        // Vérifiez que l'URL de l'image a au moins un caractère avant de l'ajouter
+        if (engineUrl.length > 0) {
+            const formData = new FormData();
+            
+            selectedVersions.forEach(version => {
+                formData.append('selected_versions[]', version);  // Note the "[]" in the name
+            });
+    
+            selectedFolders.forEach(folder => {
+                formData.append('selected_folders[]', folder);  // Note the "[]" in the name
+            });
+    
+            formData.append('engine_url', engineUrl); // Ajoutez l'URL du moteur ici
+    
+            fetch('/get_parameters/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Parameters of selected versions:", data);
+                hideProgressBar();
+            });
+        } else {
+            // Gérez le cas où l'URL de l'image est vide ou ne contient que des espaces
+            hideProgressBar();
+            alert("L'URL du moteur incorrecte.");
         }
-
-        fetch('/get_parameters/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Parameters of selected versions:", data);
-            hideProgressBar();           
-        });
     });
 
     // Function to get CSRF token

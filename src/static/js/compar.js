@@ -111,14 +111,15 @@ document.addEventListener('DOMContentLoaded', function () {
     viewAllImagesButton.addEventListener('click', function () {
         const selectedPairs = [];
         const selectionGroups = document.querySelectorAll('.selection-group');
-
+        const selectedOptions = [];
+    
         selectionGroups.forEach(function (group) {
             const sourceSelect = group.querySelector('.source_select');
             const destinationSelect = group.querySelector('.destination_select');
-
+    
             const selectedFolder = sourceSelect.value;
             const selectedSubfolder = destinationSelect.value;
-
+    
             if (selectedFolder && selectedSubfolder) {
                 selectedPairs.push({
                     folder: selectedFolder,
@@ -126,10 +127,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         });
-
+    
+        // Récupérer les cases à cocher sélectionnées
+        const checkboxes = document.querySelectorAll('input[name="option"]:checked');
+        checkboxes.forEach(function (checkbox) {
+            selectedOptions.push(checkbox.value);
+        });
+    
         if (selectedPairs.length > 1) {
             const queryStringParts = selectedPairs.map(pair => `selected_folder=${pair.folder}&selected_subfolder=${pair.subfolder}`);
-            const queryString = queryStringParts.join('&');
+            const optionsQueryString = `selected_options=${selectedOptions.join(',')}`;
+            const queryString = queryStringParts.join('&') + '&' + optionsQueryString;
             const url = `/view_all_images/?${queryString}`;
             window.open(url, '_blank');
         }

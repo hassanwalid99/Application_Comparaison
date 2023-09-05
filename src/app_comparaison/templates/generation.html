@@ -91,9 +91,8 @@
             {% endfor %}
         </div>
         <div style="position: absolute; top: 680px; left: 10px;">
-            <input type="file" id="exe_input" name="exe_input" accept=".exe" style="display: none;" />
-            <button type="button" onclick="document.getElementById('exe_input').click();">Choisir un Moteur</button>
-            <input type="text" style="margin-left: 3px; width: 400px;" id="selected_exe" name="selected_exe" readonly>
+            <label for="engine_url">URL du Moteur:</label>
+            <input type="text" id="engine_url" name="engine_url" style="margin-left: 3px; width: 400px;" />
         </div>     
         <button type="submit" style="position: absolute; top: 730px; left: 200px; width: 200px; height: 50px;" >Generer</button>
     </form>
