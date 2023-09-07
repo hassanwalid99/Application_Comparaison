@@ -24,6 +24,7 @@ import cv2
 import pyexr
 import matplotlib.pyplot as plt
 import time
+import re
 COLOR_MAP = 'viridis'
 
 
@@ -266,6 +267,10 @@ def get_parameters(request):
     date = maintenant.strftime("%Y-%m-%d_%H-%M-%S")
     db = TinyDB('configurations.json')
     parameters = {}
+    # Vérifiez si l'URL du moteur est valide
+    if not os.path.exists(engine_url):
+        return JsonResponse({'success': False, 'message': 'L\'URL du moteur est invalide.'})
+        
     
     for version_name in selected_versions:
         table_name, version_number = version_name.split('.')
@@ -309,35 +314,7 @@ def get_parameters(request):
                 
                 
                 commande = [engine_url, scene_file_path]
-                subprocess.run(commande, shell=True) 
-                # Obtenez le temps de début
-                temps_debut = time.time()
-
-                # Exécutez la commande
-                process = subprocess.Popen(commande, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-                while True:
-                    # Lisez la sortie standard et la sortie d'erreur de la commande (facultatif)s
-                    stdout, stderr = process.communicate()
-
-                    # Vérifiez si la commande s'est terminée
-                    if process.poll() is not None:
-                        break
-
-                    # Calculez le temps écoulé depuis le début
-                    temps_ecoule = time.time() - temps_debut
-
-                    # Estimez le temps restant (vous pouvez ajuster cette estimation en fonction de la progression de votre commande)
-                    # Ici, nous supposons que la commande est linéaire et que le temps restant est proportionnel au temps écoulé.
-                    temps_total_estime = temps_ecoule / (process.pid / 100)
-                    temps_restant = temps_total_estime - temps_ecoule
-
-                    print(f"Temps écoulé : {temps_ecoule:.2f} secondes")
-                    print(f"Temps restant estimé : {temps_restant:.2f} secondes")
-
-                # Vous pouvez également accéder au code de retour de la commande
-                code_retour = process.returncode
-                print(f"Code de retour de la commande : {code_retour}")              
+                subprocess.run(commande, shell=True)               
             shutil.rmtree(tempo)
                 
     return JsonResponse({'success': True})
@@ -409,7 +386,7 @@ def view_all_images(request):
 
                 if subfolder_name not in image_data[image_name]:
                     image_data[image_name][subfolder_name] = []
-
+                
                 image_data[image_name][subfolder_name].append(image_path)
 
         # Remove images not present in all other selected subfolders
@@ -417,32 +394,45 @@ def view_all_images(request):
         for image_name, subfolder_data in image_data.items():
             all_subfolders_exist = all(selected_folder + "_" + selected_subfolders[i].split(';')[-1] in subfolder_data for i, selected_folder in enumerate(selected_folders))
             if all_subfolders_exist:
-                filtered_image_data[image_name] = subfolder_data
-
+                filtered_image_data[image_name] = subfolder_data  
+                
         context = {
             'image_data': filtered_image_data,
         }
-        
+        new_image_data = traiter_contexte(context)
+        #print(new_image_data)
         metric_results = {}
 
-        for image_name, subfolder_data in filtered_image_data.items():
-            for subfolder_name, image_paths in subfolder_data.items():
-                if os.path.isfile(os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")):
-                    reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")
-                else:
-                    reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.png")  
-
-                for image_path in image_paths:
-                    chemin = os.path.dirname(image_path[1:])
+        for image_name, subfolder_data in context.get('image_data', {}).items():
+            if os.path.isfile(os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")):
+                reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.exr")
+            else:
+                reference_image_path = os.path.join(".", "media" ,"scene", image_name , f"{image_name}.png")  
+            for subfolder_name, image_info_list in subfolder_data.items():
+                    image_info = image_info_list[0]
+                    chemin_image = image_info.get('chemin', '')
+                                       
+                    chemin = os.path.dirname(chemin_image[1:])                    
+                    if not os.path.exists(os.path.join(chemin,image_name)):
+                        os.makedirs(os.path.join(chemin,image_name), exist_ok=True)   
                     #metrics = ['l1', 'l2', 'mrse', 'mape']  
                     metric_results[image_name] = {}
                     for metric in selected_options:
-                        error = compute_metric_from_files(reference_image_path, image_path[1:], metric, 1e-2)
+                        error = compute_metric_from_files(reference_image_path, chemin_image[1:], metric, 1e-2)
                         err_mean = np.mean(error)  
                         fc = falsecolor(error, [0, 1], 1e-2)
-                        output = os.path.join(chemin , metric + "_" + image_name + ".png")
-                        print("chemin et metric ", image_path, metric)
+                        output = os.path.join(chemin ,image_name , metric + ".png")
+                        print("chemin et metric ", chemin_image, metric)
                         plt.imsave(output, fc)
+                        
+                        # Créez une nouvelle image_info_list pour stocker le nouveau chemin et titre
+                        new_image_info = {'chemin': os.path.join(os.path.dirname(chemin_image) ,image_name , metric + ".png").replace("\\", "/"), 'titre': metric.upper()}
+
+                        # Ajoutez la nouvelle image_info à subfolder_name
+                        if subfolder_name not in context['image_data'][image_name]:
+                            context['image_data'][image_name][subfolder_name] = []
+                        context['image_data'][image_name][subfolder_name].append(new_image_info)
+                        
                         # Stocker le résultat dans un dictionnaire avec une structure appropriée
                         if metric not in metric_results[image_name]:
                             metric_results[image_name][metric] = {}
@@ -451,24 +441,29 @@ def view_all_images(request):
                         metric_results[image_name][metric][subfolder_name][image_path] = error
                     
                      
-        for image_name, subfolder_data in filtered_image_data.items():
-            for subfolder_name, image_paths in subfolder_data.items():
-                new_image_paths = []  # Liste pour stocker les nouveaux chemins d'images
-                for image_path in image_paths:
-                    if image_path.lower().endswith('.exr'):
-                        png_file_path = os.path.splitext(image_path[1:])[0] + '.png'
+        for image_name, subfolder_data in context.get('image_data', {}).items():
+            for subfolder_name, image_info_list in subfolder_data.items():
+                for image_info in image_info_list:
+                    chemin_image = image_info.get('chemin', '')
+                    new_image_paths = []  # Liste pour stocker les nouveaux chemins d'images                   
+                    if chemin_image.lower().endswith('.exr'):
+                        png_file_path = os.path.splitext(chemin_image[1:])[0] + '.png'
                         if not os.path.exists(png_file_path):
-                            exr_to_png(image_path[1:], png_file_path)
+                            exr_to_png(chemin_image[1:], png_file_path)
                         new_image_path = '/' + png_file_path
-                        new_image_paths.append(new_image_path)                     
-                    else:
-                        new_image_paths.append(image_path)
-                subfolder_data[subfolder_name] = new_image_paths  # Mise à jour des chemins d'images dans le sous-dictionnaire
-
+                        image_info['chemin'] = new_image_path                     
+            
         
-        #print(metric_results)
+        
+        for image_name, subfolder_data in context.get('image_data', {}).items():
+            # Créez un dictionnaire pour la référence au même niveau que les sous-dossiers
+            subfolder_data["Reference"] = []
+            # Ajoutez le chemin d'accès à la référence (par exemple, une image PNG)
+            subfolder_data["Reference"].append({'chemin': os.path.join("/media" ,"scene", image_name , f"{image_name}.png").replace("\\", "/"), 'titre': 'Image'})
+            
+        #traiter_contexte(context)
+        print(context)
         return render(request, 'image_gallery.html', context)
-
     return render(request, 'image_gallery.html', {'error_message': 'Invalid selection'})
 
 def check_image_presence(request):
@@ -528,7 +523,6 @@ def check_image_presence(request):
 
 def compute_metric_from_files(ref_path, test_path, metric, eps):
     
-
     # Charger les images de référence et de test en fonction de leurs extensions
     ref = load_img(ref_path)
     test = load_img(test_path)
@@ -580,3 +574,19 @@ def load_img(filepath):
         raise Exception('Only HDR and OpenEXR and PNG images are supported')
 
     return img
+
+def traiter_contexte(contexte):
+    image_data = contexte.get('image_data', {})
+
+    # Créer une nouvelle structure de données avec les chemins d'image et le titre "Image"
+    new_image_data = {}
+    for image_name, folder_data in image_data.items():
+        new_folder_data = {}
+        for folder_name, image_paths in folder_data.items():
+            new_image_paths = [{'chemin': path, 'titre': 'Image'} for path in image_paths]
+            new_folder_data[folder_name] = new_image_paths
+        new_image_data[image_name] = new_folder_data
+
+    contexte['image_data'] = new_image_data
+    return contexte
+

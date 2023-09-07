@@ -74,10 +74,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     generationForm.addEventListener("submit", function (event) {
         event.preventDefault();
-        showProgressBar(); // Afficher la fenêtre contextuelle
     
         const selectedVersions = Array.from(versionCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
         const selectedFolders = Array.from(folderCheckboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+
+        if (selectedVersions.length === 0 || selectedFolders.length === 0) {
+            hideProgressBar(); // Cacher la fenêtre contextuelle
+            alert("Veuillez sélectionner au moins un élément dans chaque liste.");
+            return; // Empêche le code suivant d'être exécuté
+        }
     
         // Récupérez l'URL du moteur à partir de l'élément engine_url
         const engineUrl = document.getElementById("engine_url").value;
@@ -85,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Vérifiez que l'URL de l'image a au moins un caractère avant de l'ajouter
         if (engineUrl.length > 0) {
             const formData = new FormData();
-            
+            showProgressBar(); // Afficher la fenêtre contextuelle
             selectedVersions.forEach(version => {
                 formData.append('selected_versions[]', version);  // Note the "[]" in the name
             });
@@ -97,6 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
             formData.append('engine_url', engineUrl); // Ajoutez l'URL du moteur ici
     
             fetch('/get_parameters/', {
+                
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken')
@@ -104,14 +110,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: formData
             })
             .then(response => response.json())
-            .then(data => {
-                console.log("Parameters of selected versions:", data);
+            .finally(() => {
+                // Masquer la barre de progression à la fin de la promesse
                 hideProgressBar();
+            })
+            .then(data => {
+                if (data.success) {
+                } else {
+                    alert(data.message); 
+                }
             });
         } else {
             // Gérez le cas où l'URL de l'image est vide ou ne contient que des espaces
             hideProgressBar();
-            alert("L'URL du moteur incorrecte.");
+            alert("L'URL du moteur est vide.");
         }
     });
 

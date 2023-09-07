@@ -14,6 +14,16 @@
             padding: 20px;
             border: 1px solid #ccc;
         }
+        /* Style pour les conteneurs de paire de sélection */
+        .selection-group {
+            display: flex;
+            align-items: center; /* Centre les éléments verticalement */
+        }
+
+        /* Style pour le bouton "X" */
+        .delete-selection {
+            margin-left: 5px; 
+        }
     </style>
 </head>
 <body>
@@ -76,7 +86,7 @@
         <input type="checkbox" name="option" value="l1"> L1
         <input type="checkbox" style="margin-left: 85px;" name="option" value="l2"> L2
         <input type="checkbox" style="margin-left: 85px;" name="option" value="mrse"> MRSE
-        <input type="checkbox" style="margin-left: 85px;"" name="option" value="mape"> MAPE
+        <input type="checkbox" style="margin-left: 85px;" name="option" value="mape"> MAPE
     </div>
     <button id="view-all-images" style="position: absolute; margin-top: 80px; left: 200px; width: 200px; height: 50px;">Comparer</button>
     <script src="{% static 'js/compar.js' %}"></script>

@@ -100,6 +100,23 @@ document.addEventListener('DOMContentLoaded', function () {
         newDestinationSelect.addEventListener('change', function () {
             updateSelectedImagesLists();
         });
+        // Ajoutez la paire de sélection au conteneur principal
+        selectionsContainer.appendChild(selectionGroup);
+
+        // Si le nombre total de paires est supérieur ou égal à 3, ajoutez le bouton "X"
+        if (document.querySelectorAll('.selection-group').length >= 3) {
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'X';
+            deleteButton.addEventListener('click', function () {
+                // Supprimez le groupe de sélection lorsqu'on clique sur le bouton "X"
+                selectionsContainer.removeChild(selectionGroup);
+                // Mettez à jour les listes d'images après la suppression
+                updateSelectedImagesLists();
+            });
+
+            // Ajoutez le bouton "X" à côté de la paire
+            selectionGroup.appendChild(deleteButton);
+        }
     }
 
     addButton.addEventListener('click', function () {
@@ -109,40 +126,56 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     viewAllImagesButton.addEventListener('click', function () {
-        const selectedPairs = [];
         const selectionGroups = document.querySelectorAll('.selection-group');
         const selectedOptions = [];
     
-        selectionGroups.forEach(function (group) {
+        // Vérifiez si toutes les paires de sélection sont remplies
+        const allPairsFilled = Array.from(selectionGroups).every(function (group) {
             const sourceSelect = group.querySelector('.source_select');
             const destinationSelect = group.querySelector('.destination_select');
-    
-            const selectedFolder = sourceSelect.value;
-            const selectedSubfolder = destinationSelect.value;
-    
-            if (selectedFolder && selectedSubfolder) {
-                selectedPairs.push({
-                    folder: selectedFolder,
-                    subfolder: selectedSubfolder
-                });
-            }
+            return sourceSelect.value && destinationSelect.value;
         });
     
+        if (!allPairsFilled) {
+            alert("Veuillez remplir toutes les paires de sélection.");
+            return; // Ne continuez pas si au moins une paire de sélection n'est pas remplie
+        }
+    
+        // Vérifiez si au moins une case à cocher est sélectionnée dans les options
+        const checkboxes_test = document.querySelectorAll('input[name="option"]:checked');
+        if (checkboxes_test.length === 0) {
+            alert("Veuillez sélectionner au moins une option.");
+            return; // Ne continuez pas si aucune option n'est sélectionnée
+        }
+    
+        // Vérifiez si la liste des "Images Affichées" est vide
+        const selectedImagesList = document.querySelector('.selected-images-list');
+        if (selectedImagesList.children.length === 0) {
+            alert("Comparaison impossible ! Veuillez voir la liste des Images Non Affichées");
+            return; // Ne continuez pas si la liste est vide
+        }
+
         // Récupérer les cases à cocher sélectionnées
         const checkboxes = document.querySelectorAll('input[name="option"]:checked');
         checkboxes.forEach(function (checkbox) {
             selectedOptions.push(checkbox.value);
         });
     
-        if (selectedPairs.length > 1) {
-            const queryStringParts = selectedPairs.map(pair => `selected_folder=${pair.folder}&selected_subfolder=${pair.subfolder}`);
-            const optionsQueryString = `selected_options=${selectedOptions.join(',')}`;
-            const queryString = queryStringParts.join('&') + '&' + optionsQueryString;
-            const url = `/view_all_images/?${queryString}`;
-            window.open(url, '_blank');
-        }
+        // Si toutes les vérifications passent, continuez avec la comparaison
+        const queryStringParts = Array.from(selectionGroups).map(function (group) {
+            const sourceSelect = group.querySelector('.source_select');
+            const destinationSelect = group.querySelector('.destination_select');
+            return `selected_folder=${sourceSelect.value}&selected_subfolder=${destinationSelect.value}`;
+        });
+    
+        const optionsQueryString = `selected_options=${selectedOptions.join(',')}`;
+        const queryString = queryStringParts.join('&') + '&' + optionsQueryString;
+        const url = `/view_all_images/?${queryString}`;
+        window.open(url, '_blank');
     });
+    
 
     const initialSelectionGroup = document.querySelector('.selection-group');
     createSelection(initialSelectionGroup);;
 });
+

@@ -33,30 +33,38 @@
             title: 'root',
             children: []
         };
-
-        // creer la structure jeri
+    
+        // Créer la structure Jeri
         for (const imageName in imageData) {
             const folderData = imageData[imageName];
             const imageItem = {
                 title: imageName,
                 children: []
             };
-
+    
             for (const folderName in folderData) {
                 const imagePaths = folderData[folderName];
-                for (const imagePath of imagePaths) {
-                    imageItem.children.push({
-                        title: folderName,
-                        image: imagePath
+                const sousDossierItem = {
+                    title: folderName,
+                    children: []
+                };
+                
+                for (const imagePathObj of imagePaths) {
+                    sousDossierItem.children.push({
+                        title: imagePathObj.titre, // Utilisez le titre de l'image ici
+                        image: imagePathObj.chemin // Utilisez le chemin de l'image ici
                     });
                 }
+    
+                imageItem.children.push(sousDossierItem);
             }
-
+    
             data.children.push(imageItem);
         }
-
-        // affichage
+    
+        // Affichage
         Jeri.renderViewer(document.getElementById('root'), data);
     </script>
+  
 </body>
 </html>
