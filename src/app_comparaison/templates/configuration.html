@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html>
-<head>
+<html style="background: #A0E9E0">
+<head >
     <title>Ma Vue avec Onglets</title>
     <style>
         .delete-row {
@@ -16,16 +16,16 @@
         .tab {
             display: inline-block;
             padding: 10px 20px;
-            background-color: #f2f2f2;
+            background-color: #000000;
             width: 150px;
             cursor: pointer;
-            margin-top: 200px;
+            margin-top: 13.5%;
             text-align: center; 
             line-height: center;   
         }
 
         .tab.selected {
-            background-color: #ccc;
+            background-color: #FF3860;
             width: 150px;
         }
 
@@ -33,7 +33,7 @@
         .tab-content {
             display: none;
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #FF3860;
         }
 
         .tab-content.active {
@@ -49,7 +49,7 @@
         }
 
         table th, table td {
-            border: 1px solid #ccc;
+            border: 1px solid #000000;
             padding: 8px;
         }
 
@@ -61,9 +61,10 @@
         .add-row {
             cursor: pointer;
             color: green;
-            margin-top: 10px;
-            margin-bottom: -15px;
-            font-size: 1.3em;;
+            margin-top: 0px;
+            margin-bottom: -20px;
+            font-size: 1.9em;;
+            font-weight: bold;
         }
 
         /* Style pour les champs de texte dans le tableau */
@@ -75,41 +76,52 @@
         /* Style pour la liste de configurations */
         .config-list-container {
             position: fixed;
-            top: 245px; /* Ajustez la position verticale pour correspondre aux onglets */
+            top: 30%; 
             right: 0;
-            width: 33%; /* Ajustez la largeur selon vos besoins */
+            width: 33%; 
             max-height: 400px;
             overflow-y: auto;
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 1px solid #FF3860;
         }
     </style>
     {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
-    <h1 style="left: 50%; top: -20px; position: absolute; color: black; font-size: 65px; font-family: Inter; font-weight: 300; word-wrap: break-word; transform: translateX(-50%);">Gestion des configurations</h1>
-    <button class="button" style="position: absolute; top: 20px; left:20px; width: 100px; height: 30px;" onclick="window.location.replace('../')">Retour</button>
+    <h1 class="has-text-danger" style="left: 50%; top: 10%; position: absolute; font-size: 70px; font-family: Inter; font-weight: 400; word-wrap: break-word; transform: translateX(-50%);">Gestion des configurations</h1>
+    <button class="button" style="position: absolute; top: 20px; left: 20px; width: 150px; height: 40px;" onclick="window.location.replace('../')">
+        <span class="icon-text">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+            <span>Home</span>
+        </span>
+    </button>
+    <h1 class="title is-1" style="font-size: 30px; top: 33%; right: 10%; position: fixed; color :#FF3860; "> Liste des Configurations</h1>
 
-    <div class="tab-container">
-        <div class="tab selected" onclick="showTabContent(1)">Nouvelle configuration</div>
-        <div class="tab" onclick="showTabContent(2)">Nouvelle Version</div>
+    <div class="tab-container" style=" margin-top: 5%;">
+        <div class="tab selected" style="width: 210px; color: white;" onclick="showTabContent(1)"> Nouvelle configuration</div>
+        <div class="tab" style="width: 210px; color: white;" onclick="showTabContent(2)">Nouvelle Version</div>
     </div>
-
+   
     <div class="tab-content-container">
         <!-- Contenu de l'onglet 1 -->
         <div class="tab-content active" id="tab-content-1">
             {% csrf_token %}
             <!-- Insérez ici le contenu de la première sous-vue -->
-            <label for="name_scene">Nom de configuration :</label>
+            <label class="title is-4" for="name_scene">Nom de configuration :</label>
             <input type="text" style="margin-left:10px" id="name_config" name="name_config">
                     
-            <h2 style="margin-top: 20px;">Parametres</h2>
             <table id="config-table">
                 <thead>
                     <tr>
-                        <th>Type</th>
-                        <th>Parametre</th>
-                        <th>Valeur</th>
+                        <th class="has-background-danger" style=" color: white;">Type</th>
+                        <th class="has-background-danger" style=" color: white;">Parametre</th>
+                        <th class="has-background-danger" style=" color: white;">Valeur</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -123,27 +135,39 @@
 
             <div class="add-row" onclick="addRow('config-table')">+</div>
             <br>
-            <button type="button" id="validatefolder" style="width: 180px; height: 35px;" onclick="sendDataToBackend()">Envoyer</button>
+            <button class="button is-danger is-outlined" type="button" id="validatefolder" style="width: 180px; height: 35px;" onclick="sendDataToBackend()">Envoyer</button>
         </div>
         <!-- Nouvelle version -->
         <div class="tab-content" id="tab-content-2">
-            <h2>Nouvelle Version</h2>
-            <label for="select_config">Sélectionnez la configuration :</label>
-            <div>
-                <select id="name_select">
-                    <option value="" disabled selected>Configuration</option>
+          
+            <label class="title is-5" for="select_config">Sélectionnez la configuration :  </label>  
+            <div class="select is-danger" >
+                <select style=" height: 40px;" id="name_select">
+                    <option  style=" height: 33px;" value="" disabled selected>Configuration</option>
                     <!-- Les options seront ajoutées dynamiquement via JavaScript -->
                 </select>
             </div>
-
+            <br>
+            <br>
+            <label class="title is-5" for="select_version">Sélectionnez la version :</label>
+            
+            <div class="select is-danger" >
+                <select style=" height: 35px;" id="select_version" name="select_version">
+                    <!-- Les options seront ajoutées dynamiquement via JavaScript -->
+                </select>
+            </div>
+            
+            {% csrf_token %}
+            <button class="button is-dark has-text-white" type="button" id="validate_version" style="width: 150px; height: 35px;">Valider</button>
+            
             <!-- Table pour entrer les paramètres -->
-            <h2>Paramètres</h2>
+           
             <table id="config-table2">
-                <thead>
+                <thead >
                     <tr>
-                        <th>Type</th>
-                        <th>Parametre</th>
-                        <th>Valeur</th>
+                        <th class="has-background-danger" style=" color: white;">Type</th>
+                        <th class="has-background-danger" style=" color: white;">Parametre</th>
+                        <th class="has-background-danger" style=" color: white;">Valeur</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -154,24 +178,25 @@
                     </tr>
                 </tbody>
             </table>
-
+            
             <div class="add-row" onclick="addRow('config-table2')">+</div>
             <br>
-            <button type="button" id="validatefolder2" style="width: 180px; height: 35px;" onclick="sendDataToBackend2()">Envoyer</button>
+            <button class="button is-danger is-outlined" type="button" id="validatefolder2" style="width: 180px; height: 35px;" onclick="sendDataToBackend2()">Envoyer</button>
         </div>
     </div>
-
-    <div class="config-list-container">    
+</div>
+    <div class="config-list-container" style=" margin-top: 5%;">          
         <div id="config-list">
             {% for config in configurations %}
-                <h2>Configuration "{{ config.name }}":</h2>
+                <h2 class="title is-4">- Configuration "{{ config.name }}":</h2>
                 {% for version in config.versions %}
-                    <h3>Version {{ version.version_id }}:</h3>
+                    <h3 class="title is-5"> Version {{ version.version_id }}:</h3>
                     <ul>
                         {% for param in version.parameters %}
                             <li>  Type : "{{ param.Type }}" ,  Parametre : "{{ param.Parametre }}", Valeur : "{{ param.Valeur }}"</li>
                         {% endfor %}
                     </ul>
+                    <br>
                 {% endfor %}
             {% endfor %}
         </div>

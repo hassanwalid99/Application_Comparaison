@@ -253,10 +253,18 @@ def save_version(request):
            
 def get_table_names(request):
     db = TinyDB('configurations.json')
-    table_names_set = db.tables()
-    table_names_list = list(table_names_set)  # Convertir l'ensemble en liste
     
-    return JsonResponse({'table_names': table_names_list})
+    # Obtenez les noms de configuration
+    table_names_set = db.tables()
+    table_names_list = list(table_names_set)
+    
+    # Obtenez les versions associées à chaque configuration
+    versions = {}
+    for table_name in table_names_list:
+        table = db.table(table_name)
+        versions[table_name] = [item.doc_id for item in table]
+    
+    return JsonResponse({'table_names': table_names_list, 'versions': versions})
 
 @require_POST
 def get_parameters(request):
@@ -589,4 +597,25 @@ def traiter_contexte(contexte):
 
     contexte['image_data'] = new_image_data
     return contexte
+
+
+
+def get_selected_version_params(request):
+    config_name = request.POST.get('configName')  # Le nom de la configuration, par exemple, "path"
+    version_id = request.POST.get('versionId')    # L'ID de la version, par exemple, "1"
+
+    db = TinyDB('configurations.json')
+    
+    # Assurez-vous que la configuration existe dans la base de données
+    if config_name in db.tables():
+        table = db.table(config_name)
+        version_data = table.get(doc_id=version_id)
+            
+        print(version_id)
+            # Vérifiez si la version a un champ "config" avec des données JSON
+        if 'config' in version_data:
+            parameters = json.loads(version_data['config']['parameters'])
+            return JsonResponse({'parameters': parameters})
+      
+
 

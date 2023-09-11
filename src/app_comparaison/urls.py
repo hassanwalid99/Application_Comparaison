@@ -22,6 +22,7 @@ urlpatterns = [
     path('get_image_names/', views.get_image_names, name='get_image_names'),
     path('check_image_presence/', views.check_image_presence, name='check_image_presence'),
     path('get_image/', views.get_image, name='get_image'),
+    path('get_selected_version_params/', views.get_selected_version_params, name='get_selected_version_params'),
 
 ] 
 

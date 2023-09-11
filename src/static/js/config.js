@@ -135,6 +135,82 @@ function sendDataToBackend2() {
     });
 }
 
+const validateButton = document.getElementById('validate_version');
+
+// Ajoutez un gestionnaire d'événements de clic au bouton "Valider"
+validateButton.addEventListener('click', fetchVersionParameters);
+function fetchVersionParameters() {
+    // Récupérer la valeur sélectionnée (nom de la configuration)
+    const selectedConfig = document.getElementById('name_select').value;
+    const selectedVersion = document.getElementById('select_version').value;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Créez un objet d'en-tête pour inclure le jeton CSRF dans la demande
+    const headers = new Headers({
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': csrfToken, // Incluez le jeton CSRF ici
+    });
+
+    // Ensuite, utilisez l'objet d'en-tête dans votre requête fetch
+    fetch('/get_selected_version_params/', {
+        method: 'POST',
+        headers: headers, // Utilisez les en-têtes avec le jeton CSRF
+        body: `configName=${selectedConfig}&versionId=${selectedVersion}`,
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Mettre à jour le tableau avec les paramètres reçus du serveur
+        const configTable2 = document.getElementById('config-table2').getElementsByTagName('tbody')[0];
+        configTable2.innerHTML = ''; // Effacez le contenu actuel de "config-table2"
+        
+        for (const param of data.parameters) {
+            const newRow = configTable2.insertRow();
+            const typeCell = newRow.insertCell(0);
+            const parametreCell = newRow.insertCell(1);
+            const valeurCell = newRow.insertCell(2);
+        
+            // Créez des éléments d'entrée pour chaque paramètre
+            const typeInput = document.createElement('input');
+            typeInput.type = 'text';
+            typeInput.value = param.Type;
+        
+            const parametreInput = document.createElement('input');
+            parametreInput.type = 'text';
+            parametreInput.value = param.Parametre;
+        
+            const valeurInput = document.createElement('input');
+            valeurInput.type = 'text';
+            valeurInput.value = param.Valeur;
+        
+            // Vérifiez s'il y a plus d'une ligne dans le tableau
+            if (configTable2.rows.length > 1) {
+                // Créez un bouton "X" pour supprimer la ligne
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-row';
+                deleteButton.innerHTML = 'X';
+                deleteButton.onclick = function() {
+                    deleteRow(this);
+                };
+        
+                // Ajoutez le bouton "X" à la quatrième cellule
+                const deleteCell = newRow.insertCell(3);
+                deleteCell.appendChild(deleteButton);
+            }
+        
+            // Ajoutez les éléments d'entrée aux cellules du tableau
+            typeCell.appendChild(typeInput);
+            parametreCell.appendChild(parametreInput);
+            valeurCell.appendChild(valeurInput);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de la récupération des paramètres:', error);
+    });
+}
+
+
+
 document.addEventListener("DOMContentLoaded", function () {
     const activeTabIndex = localStorage.getItem('activeTabIndex');
     if (activeTabIndex !== null) {
@@ -150,18 +226,40 @@ function displayTableNames() {
             if (data.table_names) {
                 const tableNamesList = data.table_names;
                 const selectElement = document.getElementById('name_select');
-                
-                // Ajouter les options au <select>
+                const versionSelectElement = document.getElementById('select_version');
+                versionSelectElement.innerHTML = ''; // Efface les anciennes options
+
+                // Ajouter les options au <select> des configurations
                 tableNamesList.forEach(tableName => {
                     const option = document.createElement('option');
                     option.value = tableName;
                     option.textContent = tableName;
                     selectElement.appendChild(option);
                 });
-                console.log(tableNamesList);
+
+                // Écouter les changements de sélection dans la première <select>
+                selectElement.addEventListener('change', () => {
+                    // Récupérer la valeur sélectionnée (nom de la configuration)
+                    const selectedConfig = selectElement.value;
+
+                    // Récupérer les versions associées à la configuration sélectionnée
+                    const versionsForConfig = data.versions[selectedConfig] || [];
+
+                    // Effacer les anciennes options de la deuxième <select>
+                    versionSelectElement.innerHTML = '';
+
+                    // Ajouter les options au <select> des versions
+                    versionsForConfig.forEach(version => {
+                        const option = document.createElement('option');
+                        option.value = version;
+                        option.textContent = `${version}`;
+                        versionSelectElement.appendChild(option);
+                    });
+                });
             }
         })
         .catch(error => {
-            console.error('Erreur lors de la récupération des noms de table:', error);
+            console.error('Erreur lors de la récupération des configurations:', error);
         });
 }
+
