@@ -178,4 +178,3 @@ document.addEventListener('DOMContentLoaded', function () {
     const initialSelectionGroup = document.querySelector('.selection-group');
     createSelection(initialSelectionGroup);;
 });
-

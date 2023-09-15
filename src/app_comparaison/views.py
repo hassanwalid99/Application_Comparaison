@@ -426,9 +426,13 @@ def view_all_images(request):
                     #metrics = ['l1', 'l2', 'mrse', 'mape']  
                     metric_results[image_name] = {}
                     for metric in selected_options:
-                        error = compute_metric_from_files(reference_image_path, chemin_image[1:], metric, 1e-2)
-                        err_mean = np.mean(error)  
-                        fc = falsecolor(error, [0, 1], 1e-2)
+                        if not metric == "negpos":
+                            error = compute_metric_from_files(reference_image_path, chemin_image[1:], metric, 1e-2)
+                            err_mean = np.mean(error)  
+                            fc = falsecolor(error, [0, 1], 1e-2)
+                        else:
+                            fc = falsecolor_np(reference_image_path, chemin_image[1:], eps=1e-2)
+                            
                         output = os.path.join(chemin ,image_name , metric + ".png")
                         print("chemin et metric ", chemin_image, metric)
                         plt.imsave(output, fc)
@@ -441,12 +445,12 @@ def view_all_images(request):
                             context['image_data'][image_name][subfolder_name] = []
                         context['image_data'][image_name][subfolder_name].append(new_image_info)
                         
-                        # Stocker le résultat dans un dictionnaire avec une structure appropriée
+                        """# Stocker le résultat dans un dictionnaire avec une structure appropriée
                         if metric not in metric_results[image_name]:
                             metric_results[image_name][metric] = {}
                         if subfolder_name not in metric_results[image_name][metric]:
                             metric_results[image_name][metric][subfolder_name] = {}
-                        metric_results[image_name][metric][subfolder_name][image_path] = error
+                        metric_results[image_name][metric][subfolder_name][image_path] = error"""
                     
                      
         for image_name, subfolder_data in context.get('image_data', {}).items():
@@ -598,8 +602,6 @@ def traiter_contexte(contexte):
     contexte['image_data'] = new_image_data
     return contexte
 
-
-
 def get_selected_version_params(request):
     config_name = request.POST.get('configName')  # Le nom de la configuration, par exemple, "path"
     version_id = request.POST.get('versionId')    # L'ID de la version, par exemple, "1"
@@ -618,4 +620,16 @@ def get_selected_version_params(request):
             return JsonResponse({'parameters': parameters})
       
 
+def falsecolor_np(ref_path, test_path, eps=1e-2):
+    """Compute negative / positive relative error."""
+    ref = load_img(ref_path)
+    test = load_img(test_path)
+    
+    diff = 2 * np.array(test - ref) / (ref + test + eps)
+    diff = np.mean(diff, axis=2)
+    diff = np.clip(diff, -1, 1)
 
+    img = np.zeros((diff.shape[0], diff.shape[1], 3))
+    img[diff > 0, 0] = diff[diff > 0]
+    img[diff < 0, 1] = -diff[diff < 0]
+    return img
